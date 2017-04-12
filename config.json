@@ -1,0 +1,70 @@
+{
+  "tmp_dir": "/home2/DESeq2/tmp/",
+  "fastq_dir": "data",
+  "nb_threads": 10,
+  "max_memory": 8000,
+  "max_disk": 10000,
+  "kmer_length": 31,
+  "lib_type": "rf",
+  "r1_suffix": "_R1_fastq.gz", 
+  "r2_suffix": "_R2_fastq.gz",
+
+  "dekupl_counter": {
+    "min_recurrence": 6,
+    "min_recurrence_abundance": 5
+  },
+
+  "Ttest": {
+    "condition" : {
+      "A": "A",
+      "B": "B"
+    },
+    "pvalue_threshold": 0.05,
+    "log2fc_threshold": 0.0
+  },
+
+  "samples": [{
+      "name": "Sample_GSC_COML_ARN",
+      "condition": "A"
+    }, {
+      "name" : "Sample_GSC_GANN_ARN",
+      "condition" : "A" 
+    }, {
+      "name" : "Sample_GSC_LEVM_ARN",
+      "condition" : "A" 
+    }, {
+      "name" : "Sample_GSC_PARR_ARN",
+      "condition" : "A" 
+    }, {
+      "name" : "Sample_GSC_SAUR_ARN",
+      "condition" : "A" 
+    }, {
+      "name" : "Sample_GSC_GENS_ARN",
+      "condition" : "A" 
+    }, {
+      "name" : "Sample_GSC_BILL",
+      "condition" : "A" 
+    }, {
+      "name" : "Sample_GSC_MTIA",
+      "condition" : "A" 
+    }, {
+      "name" : "Sample_GSC_GRAG_ARN",
+      "condition" : "B" 
+    }, {
+      "name" : "Sample_GSC_KORN_ARN",
+      "condition" : "B" 
+    }, {
+      "name" : "Sample_GSC_POPI_ARN",
+      "condition" : "B" 
+    }, {
+      "name" : "Sample_GSC_RIPL_ARN",
+      "condition" : "B" 
+    }, {
+      "name" : "Sample_GSC_SEGK_ARN",
+      "condition" : "B" 
+    }, {
+      "name" : "Sample_GSC_SEVM_ARN",
+      "condition" : "B" 
+    }
+  ]
+}
