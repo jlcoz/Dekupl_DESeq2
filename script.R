@@ -32,6 +32,8 @@ nb_core=snakemake@config$nb_threads
 output_tmp=snakemake@config$tmp_dir
 output_res=snakemake@output
 
+output_log=snakemake@log[[1]]
+
 dir.create(output_tmp, showWarnings = FALSE)
 
 split_lines = 1000
@@ -64,7 +66,7 @@ if(nb_line_last_file < split_lines){
                sep=""))
 }
 
-sink('/home/jlcoz/DEKUPL_DESEQ2_RUN/LOGS/DESeq2.txt', append=TRUE, split=TRUE)
+sink(output_log, append=TRUE, split=TRUE)
 print(paste(Sys.time(),"Split done"))
 sink()
 
@@ -73,7 +75,7 @@ lst_files = system(paste("find",output_tmp,"-iname \"*_subfile.txt\" | sort -n")
 header = as.character(unlist(read.table(file = paste(output_tmp,"header_large_file.txt",sep=""), sep = "\t", header = FALSE)))
 
 
-sink('/home/jlcoz/DEKUPL_DESEQ2_RUN/LOGS/DESeq2.txt', append=TRUE, split=TRUE)
+sink(output_log, append=TRUE, split=TRUE)
 print(paste(Sys.time(),"Foreach on the", length(lst_files),"files"))
 sink()
 
@@ -151,21 +153,21 @@ invisible(foreach(i=1:length(lst_files)) %dopar%{
 
 after_foreach<-Sys.time()
 
-sink('/home/jlcoz/DEKUPL_DESEQ2_RUN/LOGS/DESeq2.txt', append=TRUE, split=TRUE)
+sink(output_log, append=TRUE, split=TRUE)
 print(paste(Sys.time(),"Foreach done in : ",after_foreach-before_foreach))
 sink()
   
   #MERGE ALL CHUNKS PVALUE INTO A FILE
 system(paste("find ",output_tmp," -name '*_pvalue_part_tmp' | xargs cat > ",output_tmp,"pvalueAll", sep=""))
 
-sink('/home/jlcoz/DEKUPL_DESEQ2_RUN/LOGS/DESeq2.txt', append=TRUE, split=TRUE)
+sink(output_log, append=TRUE, split=TRUE)
 print(paste(Sys.time(),"Pvalues merged into pvalueAll file"))
 sink() 
 
   #MERGE ALL CHUNKS DESeq2 INTO A FILE
 system(paste("find ",output_tmp," -name '*_dataDESeq2_part_tmp' | xargs cat | awk '{OFS=\"\\t\"}{if(NR==1){print}else{if($1 !~ \"ID\"){print}}}' > dataDESeq2All", sep=""))
 
-sink('/home/jlcoz/DEKUPL_DESEQ2_RUN/LOGS/DESeq2.txt', append=TRUE, split=TRUE)
+sink(output_log, append=TRUE, split=TRUE)
 print(paste(Sys.time(),"DESeq 2 results merged into dataDESeq2All file"))
 sink()
 
@@ -199,14 +201,14 @@ system(paste("head -1 adj_pvalue > header_adj_pvalue.txt ; sed -i 1d adj_pvalue"
   #LEFT JOIN INTO dataDESeq2All
 system(paste("sort -k1,1 adj_pvalue > sorted_adj_pvalue_tmp ; sort -k1,1 dataDESeq2All > sorted_dataDESeq2All_tmp ; join sorted_adj_pvalue_tmp sorted_dataDESeq2All_tmp | tr ' ' '\t' > dataDESeq2Filtered && rm sorted_dataDESeq2All_tmp sorted_adj_pvalue_tmp",sep = ""))
 
-sink('/home/jlcoz/DEKUPL_DESEQ2_RUN/LOGS/DESeq2.txt', append=TRUE, split=TRUE) 
+sink(output_log, append=TRUE, split=TRUE) 
 print(paste(Sys.time(),"Pvalue and rest of data merged"))
 sink()
   #CREATE THE FINAL HEADER USING ADJ_PVALUE AND DATADESeq2ALL ONES
 system(paste("paste header_adj_pvalue.txt header_dataDESeq2All.txt > final_header.tmp ; cat final_header.tmp dataDESeq2Filtered > ",output_res," && rm final_header.tmp", sep = ""))
 
 end_of_analysis=Sys.time()
-sink('/home/jlcoz/DEKUPL_DESEQ2_RUN/LOGS/DESeq2.txt', append=TRUE, split=TRUE)
+sink(output_log, append=TRUE, split=TRUE)
 print(paste(Sys.time(),"Analysis done. Results in ",output_res," final_results.tsv and done in :", end_of_analysis-start_of_analysis))
 sink()
   #REMOVE THE CHUNKS FILE

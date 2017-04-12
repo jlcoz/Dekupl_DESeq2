@@ -443,6 +443,7 @@ rule test_diff_counts:
     counts = NO_GENCODE_COUNTS,
     sample_conditions = SAMPLE_CONDITIONS_FULL
   output: DIFF_COUNTS
+  log = LOGS
   threads:6
   script: "./script.R"
 
