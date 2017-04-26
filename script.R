@@ -30,7 +30,8 @@ pvalue_threshold=snakemake@config$Ttest$pvalue_threshold
 nb_core=snakemake@config$nb_threads
 
 output_tmp=snakemake@config$tmp_dir
-output_res=snakemake@output
+output_diff_counts=snakemake@output$diff_counts
+output_pvalue_all=snakemake@output$pvalue_all
 
 output_log=snakemake@log[[1]]
 
@@ -158,7 +159,7 @@ print(paste(Sys.time(),"Foreach done in : ",after_foreach-before_foreach))
 sink()
   
   #MERGE ALL CHUNKS PVALUE INTO A FILE
-system(paste("find ",output_tmp," -name '*_pvalue_part_tmp' | xargs cat > ",output_tmp,"pvalueAll", sep=""))
+system(paste("find ",output_tmp," -name '*_pvalue_part_tmp' | xargs cat > ",output_pvalue_all,sep=""))
 
 sink(output_log, append=TRUE, split=TRUE)
 print(paste(Sys.time(),"Pvalues merged into pvalueAll file"))
@@ -175,7 +176,7 @@ sink()
 system(paste("head -1 dataDESeq2All | cut -f2- > header_dataDESeq2All.txt ; sed -i 1d dataDESeq2All",sep=""))
   
   #CREATE AND WRITE THE ADJUSTED PVALUE UNDER THRESHOLD WITH THEIR ID
-pvalueAll <- data.frame(fread(paste("pvalueAll"),header=FALSE))
+pvalueAll <- data.frame(fread(paste(output_pvalue_all),header=FALSE))
 names(pvalueAll)=c("ID","pvalue")
 adjPvalue <- p.adjust(as.numeric(as.character(pvalueAll[,"pvalue"])),"BH")
   
@@ -205,11 +206,11 @@ sink(output_log, append=TRUE, split=TRUE)
 print(paste(Sys.time(),"Pvalue and rest of data merged"))
 sink()
   #CREATE THE FINAL HEADER USING ADJ_PVALUE AND DATADESeq2ALL ONES
-system(paste("paste header_adj_pvalue.txt header_dataDESeq2All.txt > final_header.tmp ; cat final_header.tmp dataDESeq2Filtered > ",output_res," && rm final_header.tmp", sep = ""))
+system(paste("paste header_adj_pvalue.txt header_dataDESeq2All.txt > final_header.tmp ; cat final_header.tmp dataDESeq2Filtered > ",output_diff_counts," && rm final_header.tmp", sep = ""))
 
 end_of_analysis=Sys.time()
 sink(output_log, append=TRUE, split=TRUE)
-print(paste(Sys.time(),"Analysis done. Results in ",output_res," final_results.tsv and done in :", end_of_analysis-start_of_analysis))
+print(paste(Sys.time()," Analysis done. Results in ",output_diff_counts," and done in :", difftime(end_of_analysis-start_of_analysis),sep="")
 sink()
   #REMOVE THE CHUNKS FILE
 system(paste("rm -rf",output_tmp))
