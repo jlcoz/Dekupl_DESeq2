@@ -46,6 +46,7 @@ REFERENCE_DIR   = "/data/references"
 RAW_COUNTS                  = COUNTS_DIR    + "/raw-counts.tsv.gz"
 NO_GENCODE_COUNTS           = COUNTS_DIR    + "/noGENCODE-counts.tsv.gz"
 DIFF_COUNTS                 = KMER_DE_DIR   + "/diff-counts.tsv.gz"
+PVALUE_ALL                  = KMER_DE_DIR   + "/pvalue_all.tsv
 MERGED_DIFF_COUNTS          = KMER_DE_DIR   + "/merged-diff-counts.tsv.gz"
 ASSEMBLIES_FASTA            = KMER_DE_DIR   + "/merged-diff-counts.fa.gz"
 ASSEMBLIES_BAM              = KMER_DE_DIR   + "/merged-diff-counts.bam"
@@ -442,7 +443,9 @@ rule test_diff_counts:
   input:
     counts = NO_GENCODE_COUNTS,
     sample_conditions = SAMPLE_CONDITIONS_FULL
-  output: DIFF_COUNTS
+  output: 
+    diff_counts = DIFF_COUNTS
+    pvalue_all = PVALUE_ALL
   log = LOGS
   threads:6
   script: "./script.R"
