@@ -112,8 +112,7 @@ invisible(foreach(i=1:length(lst_files)) %dopar%{
   
   #REPLACE SIZE FACTORS by SIZE FACTORS COMPUTED ON
   #THE ALL DATASET
-  dds <- estimateSizeFactors(dds)
-  sizeFactors(dds) <-size_factors[,2]
+  normalizationFactors(dds) <- size_factors[,2]
    
   #RUN DESeq2
   dds <- estimateDispersionsGeneEst(dds)
@@ -143,6 +142,7 @@ invisible(foreach(i=1:length(lst_files)) %dopar%{
               row.names = FALSE,
               col.names = TRUE)
   
+  # WRITE PVALUES FOR THE CURRENT CHUNK
   write.table(data.frame(ID=rownames(resDESeq2),pvalue=resDESeq2$pvalue),
                 file=paste(output_tmp,i,"_pvalue_part_tmp",sep=""),
                 sep="\t",quote=FALSE,
