@@ -113,7 +113,12 @@ invisible(foreach(i=1:length(lst_files)) %dopar%{
   
   #REPLACE SIZE FACTORS by SIZE FACTORS COMPUTED ON
   #THE ALL DATASET
-  normalizationFactors(dds) <- size_factors[,2]
+
+  normFactors <- matrix(size_factors[,2],
+                        ncol=ncol(dds),nrow=nrow(dds),
+                        dimnames=list(1:nrow(dds),1:ncol(dds)),
+                        byrow = TRUE)
+  normalizationFactors(dds) <- normFactors
    
   #RUN DESeq2
   dds <- estimateDispersionsGeneEst(dds)
@@ -210,7 +215,7 @@ system(paste("paste header_adj_pvalue.txt header_dataDESeq2All.txt > final_heade
 
 end_of_analysis=Sys.time()
 sink(output_log, append=TRUE, split=TRUE)
-print(paste(Sys.time()," Analysis done. Results in ",output_diff_counts," and done in :", difftime(end_of_analysis-start_of_analysis),sep="")
+print(paste(Sys.time()," Analysis done in :", difftime(end_of_analysis-start_of_analysis),sep="")
 sink()
   #REMOVE THE CHUNKS FILE
 system(paste("rm -rf",output_tmp))
