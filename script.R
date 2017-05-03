@@ -37,7 +37,7 @@ output_log=snakemake@log[[1]]
 
 dir.create(output_tmp, showWarnings = FALSE)
 
-split_lines = 1000
+split_lines = 1000000
 
 registerDoParallel(cores=nb_core)
 
@@ -140,7 +140,7 @@ invisible(foreach(i=1:length(lst_files)) %dopar%{
   
   write.table(data.frame(ID=rownames(resDESeq2),
                          meanA=rowMeans(NormCount[,1:nb_conditionA]),
-                         meanB=rowMeans(NormCount[,(as.numeric(nb_conditionB)-1):(as.numeric(nb_conditionA)+as.numeric(nb_conditionB))]),
+                         meanB=rowMeans(NormCount[,(as.numeric(nb_conditionA)+1):(as.numeric(nb_conditionA)+as.numeric(nb_conditionB))]),
                          log2FC=resDESeq2$log2FoldChange,
                          NormCount),
               file=paste(output_tmp,i,"_dataDESeq2_part_tmp", sep=""),
@@ -185,7 +185,6 @@ pvalueAll <- data.frame(fread(paste(output_pvalue_all),header=FALSE))
 names(pvalueAll)=c("ID","pvalue")
 adjPvalue <- p.adjust(as.numeric(as.character(pvalueAll[,"pvalue"])),"BH")
   
-  
 adjPvalue_dataframe = data.frame(ID=pvalueAll$ID,
                            pvalue=adjPvalue)
 
@@ -205,11 +204,13 @@ print(paste(Sys.time(),"Pvalue are adjusted"))
 system(paste("head -1 adj_pvalue > header_adj_pvalue.txt ; sed -i 1d adj_pvalue",sep=""))
   
   #LEFT JOIN INTO dataDESeq2All
+  #GET ALL THE INFORMATION (ID,MEAN_A,MEAN_B,LOG2FC,COUNTS) FOR DE KMERS
 system(paste("sort -k1,1 adj_pvalue > sorted_adj_pvalue_tmp ; sort -k1,1 dataDESeq2All > sorted_dataDESeq2All_tmp ; join sorted_adj_pvalue_tmp sorted_dataDESeq2All_tmp | tr ' ' '\t' > dataDESeq2Filtered && rm sorted_dataDESeq2All_tmp sorted_adj_pvalue_tmp",sep = ""))
 
 sink(output_log, append=TRUE, split=TRUE) 
 print(paste(Sys.time(),"Pvalue and rest of data merged"))
 sink()
+
   #CREATE THE FINAL HEADER USING ADJ_PVALUE AND DATADESeq2ALL ONES
 system(paste("paste header_adj_pvalue.txt header_dataDESeq2All.txt > final_header.tmp ; cat final_header.tmp dataDESeq2Filtered > ",output_diff_counts," && rm final_header.tmp", sep = ""))
 
