@@ -74,7 +74,7 @@ if(nb_line_last_file < (split_lines/2)){
   
   system(paste("cd ",output_dir," ; file_number=$(ls | grep subfile | wc -l) ",
                "; last_file=$(ls | sort -n | grep subfile | tail -1)",
-               "; split -n 2 $last_file",
+               "; split -n l/2 $last_file",
                "; mv xaa ${file_number}_subfile.txt",
                "; file_number=$(echo $((file_number+1)))",
                "; mv xab ${file_number}_subfile.txt",
