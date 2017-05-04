@@ -55,7 +55,9 @@ nb_line_last_file=system(paste("cd ",output_tmp," ; cat $(ls | sort -n | grep su
 
 #CONCATENATE THE LAST FILE CREATED WITH THE SECOND LAST ONE AND THEN REMOVE IT
 #IN ORDER TO AVOID TOO SHORT FILES
-if(nb_line_last_file < split_lines){
+#IF THE MERGED FILE IS TOO LARGE, IT WILL BE DIVIDED IN TWO
+
+if(nb_line_last_file < (split_lines/2)){
 
   print(paste("The last file has",nb_line_last_file,"line(s) it will be concatenated to the second last one"))
   system(paste("cd ",output_tmp," ; file_number=$(ls | grep subfile|wc -l) ",
@@ -64,6 +66,18 @@ if(nb_line_last_file < split_lines){
                "; cat $last_2_files > tmp_concat ",
                "&& mv tmp_concat ${file_number}_subfile.txt",
                "&& rm $((file_number+1))_subfile.txt ",
+               sep=""))
+               
+  nb_line_last_file=system(paste("cd ",output_dir," ; cat $(ls | sort -n | grep subfile |tail -1)|wc -l", sep=""), intern=TRUE)
+  
+  print(paste("The last file has",nb_line_last_file,"line(s) it will be splitted in two"))
+  
+  system(paste("cd ",output_dir," ; file_number=$(ls | grep subfile | wc -l) ",
+               "; last_file=$(ls | sort -n | grep subfile | tail -1)",
+               "; split -n 2 $last_file",
+               "; mv xaa ${file_number}_subfile.txt",
+               "; file_number=$(echo $((file_number+1)))",
+               "; mv xab ${file_number}_subfile.txt",
                sep=""))
 }
 
