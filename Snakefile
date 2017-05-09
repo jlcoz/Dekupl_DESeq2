@@ -166,7 +166,7 @@ rule kallisto_index:
 rule gsnap_index:
   input: GENOME_FASTA
   output: GSNAP_INDEX_DIR + "/" + GSNAP_INDEX_NAME
-  shell: "{GSNAP} gmap_build -D {GSNAP_INDEX_DIR} -d {GSNAP_INDEX_NAME} --gunzip {input}"
+  shell: "{GSNAP} gmap_build -k 31 -D {GSNAP_INDEX_DIR} -d {GSNAP_INDEX_NAME} --gunzip {input}"
 
 ###############################################################################
 #
@@ -499,5 +499,5 @@ rule gsnap_align:
     deseq = DEGS
   output: ASSEMBLIES_BAM
   threads: 10
-  shell: """{GSNAP} gsnap -D {GSNAP_INDEX_DIR} -d {GSNAP_INDEX_NAME} --gunzip -t {threads} -A sam -B 2 -N 1 {input.fasta} | {SAMTOOLS} bash -c "samtools view -bS - | samtools sort - " > {output} && \
+  shell: """{GSNAP} gsnap -k 31 -D {GSNAP_INDEX_DIR} -d {GSNAP_INDEX_NAME} --gunzip -t {threads} -A sam -B 2 -N 1 {input.fasta} | {SAMTOOLS} bash -c "samtools view -bS - | samtools sort - " > {output} && \
   {SAMTOOLS} samtools index {output}"""
