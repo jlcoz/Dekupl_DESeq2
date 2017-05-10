@@ -43,13 +43,27 @@ registerDoParallel(cores=nb_core)
 
 setwd(output_tmp)
 
-# SPLIT THE MAIN FILE INTO CHUNKS WITH AUTOINCREMENTED NAMES AND SAVE THE HEADER INTO A FILE
+#SHUFFLE THE KMERS (AVOIDING SHUFFLE THE HEADER)
+system(paste("zcat ",raw_counts,
+       " | tail -n +2",
+       " | shuf -o ",output_tmp,"SHUFFLE_tmp",            
+       " ; gzip ",output_tmp,"SHUFFLE_tmp",       
+       " ; mv ",output_tmp,"SHUFFLE_tmp.gz ",output_dir,
+       " ; mv ",output_dir,"SHUFFLE_tmp.gz ",data_path,sep=""))
+
+end_shuffle = Sys.time()
+
+print(paste("Temps :",difftime(end_shuffle,start_shuffle)))
+
+#SAVE THE HEADER INTO A FILE
+system(paste("zcat ",raw_counts," | head -1 > ",output_dir,"header.txt",sep=""))
+
+# SPLIT THE MAIN FILE INTO CHUNKS WITH AUTOINCREMENTED NAMES
 
 system(paste("zcat ",data_path,
              " | awk -v split_lines=",split_lines,
-             " -v output_tmp=",output_tmp,
-             " 'NR%split_lines==1{OFS=\"\\t\";x=++i\"_subfile.txt\"}{OFS=\"\";print > output_tmp x}'",
-             "; head -1 ",output_tmp,"1_subfile.txt >",output_tmp,"header_large_file.txt ; sed -i '1d' ",output_tmp,"1_subfile.txt; ",sep=""))
+             " -v output_dir=",output_dir,
+             " 'NR%split_lines==1{OFS=\"\\t\";x=++i\"_subfile.txt\"}{OFS=\"\";print > output_dir x}'",sep=""))
 
 nb_line_last_file=system(paste("cd ",output_tmp," ; cat $(ls | sort -n | grep subfile |tail -1)|wc -l", sep=""), intern=TRUE)
 
@@ -96,6 +110,9 @@ sink()
 
 before_foreach<-Sys.time()
 
+## LOADING PRIOR KNOWN NORMALISATION FACTORS
+size_factors = data.frame(fread(paste("cat ",normalization_factor_path," | awk '{print $1,$3}'")))
+
 #DESeq2 ANALYSIS ON EACH CHUNKS
 invisible(foreach(i=1:length(lst_files)) %dopar%{
 
@@ -115,10 +132,6 @@ invisible(foreach(i=1:length(lst_files)) %dopar%{
   dds <- DESeqDataSetFromMatrix(countData,
                               colData = colDat,
                               design = ~ conds)
-
-  #LOADING PRIOR KNOWN NORMALISATION FACTORS
-
-  size_factors = data.frame(fread(paste("cat ",normalization_factor_path," | awk '{print $1,$3}'")))
 
   NormCount_names = colnames(bigTab)
   rm(bigTab);gc()
@@ -232,5 +245,6 @@ end_of_analysis=Sys.time()
 sink(output_log, append=TRUE, split=TRUE)
 print(paste(Sys.time()," Analysis done in :", difftime(end_of_analysis-start_of_analysis),sep="")
 sink()
+
   #REMOVE THE CHUNKS FILE
 system(paste("rm -rf",output_tmp))
