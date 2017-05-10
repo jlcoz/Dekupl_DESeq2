@@ -20,7 +20,7 @@ if (!require("DESeq2")) {
   library("DESeq2")
 }
 
-data_path=snakemake@input$counts
+no_GENCODE=snakemake@input$counts
 normalization_factor_path = snakemake@input$sample_conditions
 nb_conditionA=length(unlist(snakemake@config$samples)[unlist(snakemake@config$samples)=="A"])
 nb_conditionB=length(unlist(snakemake@config$samples)[unlist(snakemake@config$samples)=="B"])
@@ -33,64 +33,63 @@ output_pvalue_all=snakemake@output$pvalue_all
 
 output_log=snakemake@log[[1]]
 
-dir.create(output_tmp, showWarnings = FALSE)
+shuffle_path=paste(snakemake@config$tmp_dir,"SHUFFLE_tmp.gz",sep="")
 
-split_lines = 1000000
+output_tmp_chunks=paste(snakemake@config$tmp_dir,"tmp_chunks/",sep="")
+output_tmp_DESeq2=paste(snakemake@config$tmp_dir,"tmp_DESeq2/",sep="")
+
+dir.create(output_tmp, showWarnings = FALSE)
+dir.create(output_tmp_chunks, showWarnings = FALSE)
+dir.create(output_tmp_DESeq2, showWarnings = FALSE)
+split_lines = 5000
 
 registerDoParallel(cores=nb_core)
 
+#SHUFFLE THE KMERS (AVOIDING SHUFFLE THE HEADER)
+
 setwd(output_tmp)
 
-#SHUFFLE THE KMERS (AVOIDING SHUFFLE THE HEADER)
-system(paste("zcat ",raw_counts,
+system(paste("zcat ",no_GENCODE,
        " | tail -n +2",
-       " | shuf -o ",output_tmp,"SHUFFLE_tmp",            
-       " ; gzip ",output_tmp,"SHUFFLE_tmp",       
-       " ; mv ",output_tmp,"SHUFFLE_tmp.gz ",output_dir,
-       " ; mv ",output_dir,"SHUFFLE_tmp.gz ",data_path,sep=""))
-
+       " | shuf -o SHUFFLE_tmp",            
+       " ; gzip -f SHUFFLE_tmp",sep=""))
 
 sink(output_log, append=TRUE, split=TRUE)
-print(paste(Sys.time(),"Shuffle done")))
+print(paste(Sys.time(),"Shuffle done"))
 sink()
 
 #SAVE THE HEADER INTO A FILE
-system(paste("zcat ",raw_counts," | head -1 > ",output_dir,"header_raw_counts.txt",sep=""))
+system(paste("zcat ",no_GENCODE," | head -1 > header_no_GENCODE.txt",sep=""))
 
-# SPLIT THE MAIN FILE INTO CHUNKS WITH AUTOINCREMENTED NAMES
+#SPLIT THE MAIN FILE INTO CHUNKS WITH AUTOINCREMENTED NAMES
 
-system(paste("zcat ",data_path,
+system(paste("zcat ",shuffle_path,
              " | awk -v split_lines=",split_lines,
-             " -v output_dir=",output_dir,
-             " 'NR%split_lines==1{OFS=\"\\t\";x=++i\"_subfile.txt\"}{OFS=\"\";print > output_dir x}'",sep=""))
+             " -v output_tmp_chunks=",output_tmp_chunks,
+             " 'NR%split_lines==1{OFS=\"\\t\";x=++i\"_subfile.txt\"}{OFS=\"\";print > output_tmp_chunks x}'",sep=""))
 
-nb_line_last_file=system(paste("cd ",output_tmp," ; cat $(ls | sort -n | grep subfile |tail -1)|wc -l", sep=""), intern=TRUE)
+nb_line_last_file=as.numeric(system(paste("cd ",output_tmp_chunks," ; cat $(ls | sort -n | grep subfile |tail -1)|wc -l", sep=""), intern=TRUE))
 
-#CONCATENATE THE LAST FILE CREATED WITH THE SECOND LAST ONE AND THEN REMOVE IT
-#IN ORDER TO AVOID TOO SHORT FILES
-#IF THE MERGED FILE IS TOO LARGE, IT WILL BE DIVIDED IN TWO
+    #CONCATENATE THE LAST FILE CREATED WITH THE SECOND LAST ONE AND THEN REMOVE IT
+    #IN ORDER TO AVOID TOO SHORT FILES
+    #IF THE MERGED FILE IS TOO LARGE, IT WILL BE DIVIDED IN TWO
 
 if(nb_line_last_file < (split_lines/2)){
 
-  sink(output_log, append=TRUE, split=TRUE)
-  print(paste(Sys.time(),"The last file has",nb_line_last_file,"line(s) it will be concatenated to the second last one"))
-  sink()
-  
-  system(paste("cd ",output_tmp," ; file_number=$(ls | grep subfile|wc -l) ",
-               "; file_number=$(echo $((file_number-1)))",
+    print(paste(Sys.time(),"The last file has",nb_line_last_file,"line(s) it will be concatenated to the second last one"))
+    system(paste("cd ",output_tmp_chunks," ; file_number=$(ls | grep subfile | wc -l) ",
+               "; file_number=$(echo $((file_number)))",
                "; last_2_files=$(ls | sort -n | grep subfile | tail -2)",
                "; cat $last_2_files > tmp_concat ",
                "&& mv tmp_concat ${file_number}_subfile.txt",
                "&& rm $((file_number+1))_subfile.txt ",
                sep=""))
-               
-  nb_line_last_file=system(paste("cd ",output_dir," ; cat $(ls | sort -n | grep subfile |tail -1)|wc -l", sep=""), intern=TRUE)
   
-  sink(output_log, append=TRUE, split=TRUE)
-  print(paste(Sys.time(),"The last file has",nb_line_last_file,"line(s) it will be splitted in two"))
-  sink()
+    nb_line_last_file=system(paste("cd ",output_tmp_chunks," ; cat $(ls | sort -n | grep subfile |tail -1)|wc -l", sep=""), intern=TRUE)
   
-  system(paste("cd ",output_dir," ; file_number=$(ls | grep subfile | wc -l) ",
+    print(paste(Sys.time(),"The last file has",nb_line_last_file,"line(s) it will be splitted in two"))
+  
+    system(paste("cd ",output_tmp_chunks," ; file_number=$(ls | grep subfile | wc -l) ",
                "; last_file=$(ls | sort -n | grep subfile | tail -1)",
                "; split -n l/2 $last_file",
                "; mv xaa ${file_number}_subfile.txt",
@@ -99,19 +98,18 @@ if(nb_line_last_file < (split_lines/2)){
                sep=""))
 }
 
+#LOAD THE FILENAMES OF DIFFERENT CHUNKS
+lst_files = system(paste("find",output_tmp_chunks,"-iname \"*_subfile.txt\" | sort -n"), intern = TRUE)
+        
 sink(output_log, append=TRUE, split=TRUE)
 print(paste(Sys.time(),"Split done"))
 sink()
 
-## LOADING DATA
-lst_files = system(paste("find",output_tmp,"-iname \"*_subfile.txt\" | sort -n"), intern = TRUE)
-header = as.character(unlist(read.table(file = paste(output_tmp,"header_raw_counts.txt",sep=""), sep = "\t", header = FALSE)))
+header = as.character(unlist(read.table(file = "header_no_GENCODE.txt", sep = "\t", header = FALSE)))
 
 sink(output_log, append=TRUE, split=TRUE)
 print(paste(Sys.time(),"Foreach on the", length(lst_files),"files"))
 sink()
-
-before_foreach<-Sys.time()
 
 ## LOADING PRIOR KNOWN NORMALISATION FACTORS
 size_factors = data.frame(fread(paste("cat ",normalization_factor_path," | awk '{print $1,$3}'")))
@@ -125,7 +123,7 @@ invisible(foreach(i=1:length(lst_files)) %dopar%{
   #REMOVE THE TAG AS A COLUMN
   bigTab=bigTab[,2:ncol(bigTab)]
   names(bigTab)=header[2:length(header)]
-  
+
   #FORMAT COLS DATA
 
   colDat <- data.frame(conds=factor(c(rep(0,nb_conditionA),rep(1,nb_conditionB))))
@@ -140,7 +138,7 @@ invisible(foreach(i=1:length(lst_files)) %dopar%{
   rm(bigTab);gc()
 
   #RUN DESEQ2 AND COLLECT DESeq2 results
-  
+
   #REPLACE SIZE FACTORS by SIZE FACTORS COMPUTED ON
   #THE ALL DATASET
 
@@ -149,38 +147,38 @@ invisible(foreach(i=1:length(lst_files)) %dopar%{
                         dimnames=list(1:nrow(dds),1:ncol(dds)),
                         byrow = TRUE)
   normalizationFactors(dds) <- normFactors
-   
+
   #RUN DESeq2
   dds <- estimateDispersionsGeneEst(dds)
   dds <- estimateDispersionsFit(dds)
   dds <- estimateDispersionsMAP(dds)
   dds <- nbinomWaldTest(dds)
   resDESeq2 <- results(dds, pAdjustMethod = "none")
-  
+
   #COLLECT COUNTS
   NormCount<- as.data.frame(counts(dds, normalized=TRUE))
   names(NormCount) <- NormCount_names
-   
+
   # WRITE A TSV WITH THIS FORMAT FOR THE CURRENT CHUNK
   # Kmer_ID
   # meanA
   # meanB
   # log2FC
   # NormCount
-  
+
   write.table(data.frame(ID=rownames(resDESeq2),
                          meanA=rowMeans(NormCount[,1:nb_conditionA]),
                          meanB=rowMeans(NormCount[,(as.numeric(nb_conditionA)+1):(as.numeric(nb_conditionA)+as.numeric(nb_conditionB))]),
                          log2FC=resDESeq2$log2FoldChange,
                          NormCount),
-              file=paste(output_tmp,i,"_dataDESeq2_part_tmp", sep=""),
+              file=paste(output_tmp_DESeq2,i,"_dataDESeq2_part_tmp", sep=""),
               sep="\t",quote=FALSE,
               row.names = FALSE,
               col.names = TRUE)
-  
+
   # WRITE PVALUES FOR THE CURRENT CHUNK
   write.table(data.frame(ID=rownames(resDESeq2),pvalue=resDESeq2$pvalue),
-                file=paste(output_tmp,i,"_pvalue_part_tmp",sep=""),
+                file=paste(output_tmp_DESeq2,i,"_pvalue_part_tmp",sep=""),
                 sep="\t",quote=FALSE,
                 row.names = FALSE,
                 col.names = FALSE)
@@ -190,29 +188,29 @@ invisible(foreach(i=1:length(lst_files)) %dopar%{
 sink(output_log, append=TRUE, split=TRUE)
 print(paste(Sys.time(),"Foreach done"))
 sink()
-  
+
   #MERGE ALL CHUNKS PVALUE INTO A FILE
-system(paste("find ",output_tmp," -name '*_pvalue_part_tmp' | xargs cat > ",output_pvalue_all,sep=""))
+system(paste("find ",output_tmp_DESeq2," -name '*_pvalue_part_tmp' | xargs cat > ",output_pvalue_all,sep=""))
 
 sink(output_log, append=TRUE, split=TRUE)
 print(paste(Sys.time(),"Pvalues merged into pvalueAll file"))
-sink() 
+sink()
 
   #MERGE ALL CHUNKS DESeq2 INTO A FILE
-system(paste("find ",output_tmp," -name '*_dataDESeq2_part_tmp' | xargs cat | awk '{OFS=\"\\t\"}{if(NR==1){print}else{if($1 !~ \"ID\"){print}}}' > dataDESeq2All", sep=""))
+system(paste("find ",output_tmp_DESeq2," -name '*_dataDESeq2_part_tmp' | xargs cat | awk '{OFS=\"\\t\"}{if(NR==1){print}else{if($1 !~ \"ID\"){print}}}' > dataDESeq2All", sep=""))
 
 sink(output_log, append=TRUE, split=TRUE)
 print(paste(Sys.time(),"DESeq 2 results merged into dataDESeq2All file"))
 sink()
 
   #SAVE THE COLNAMES INTO HEADER.TXT AND REMOVE THE COLNAME ID
-system(paste("head -1 dataDESeq2All | cut -f2- > header_dataDESeq2All.txt ; sed -i 1d dataDESeq2All",sep=""))
-  
+system(paste("head -1 dataDESeq2All | cut -f2- >  header_dataDESeq2All.txt ; sed -i 1d dataDESeq2All",sep=""))
+
   #CREATE AND WRITE THE ADJUSTED PVALUE UNDER THRESHOLD WITH THEIR ID
 pvalueAll <- data.frame(fread(paste(output_pvalue_all),header=FALSE))
 names(pvalueAll)=c("ID","pvalue")
 adjPvalue <- p.adjust(as.numeric(as.character(pvalueAll[,"pvalue"])),"BH")
-  
+
 adjPvalue_dataframe = data.frame(ID=pvalueAll$ID,
                            pvalue=adjPvalue)
 
@@ -222,32 +220,32 @@ adjPvalue_dataframe = na.omit(adjPvalue_dataframe)
 
 write.table(adjPvalue_dataframe,
             file="adj_pvalue",
-            sep="\t",quote=FALSE,
+            sep="\t",
+            quote=FALSE,
             col.names = TRUE,
             row.names = FALSE)
 
-sink(output_log, append=TRUE, split=TRUE)  
+sink(output_log, append=TRUE, split=TRUE)
 print(paste(Sys.time(),"Pvalue are adjusted"))
 sink()
-  
+
   #SAVE THE HEADER
 system(paste("head -1 adj_pvalue > header_adj_pvalue.txt ; sed -i 1d adj_pvalue",sep=""))
-  
+
   #LEFT JOIN INTO dataDESeq2All
   #GET ALL THE INFORMATION (ID,MEAN_A,MEAN_B,LOG2FC,COUNTS) FOR DE KMERS
-system(paste("sort -k1,1 adj_pvalue > sorted_adj_pvalue_tmp ; sort -k1,1 dataDESeq2All > sorted_dataDESeq2All_tmp ; join sorted_adj_pvalue_tmp sorted_dataDESeq2All_tmp | tr ' ' '\t' > dataDESeq2Filtered && rm sorted_dataDESeq2All_tmp sorted_adj_pvalue_tmp",sep = ""))
+system(paste("sort -k1,1 adj_pvalue > sorted_adj_pvalue_tmp ; sort -k1,1 dataDESeq2All > sorted_dataDESeq2All_tmp ; join sorted_adj_pvalue_tmp sorted_dataDESeq2All_tmp | tr ' ' '\t' > dataDESeq2Filtered",sep = ""))
 
-sink(output_log, append=TRUE, split=TRUE) 
+sink(output_log, append=TRUE, split=TRUE)
 print(paste(Sys.time(),"Pvalue and rest of data merged"))
 sink()
 
-  #CREATE THE FINAL HEADER USING ADJ_PVALUE AND DATADESeq2ALL ONES
-system(paste("paste header_adj_pvalue.txt header_dataDESeq2All.txt > final_header.tmp ; cat final_header.tmp dataDESeq2Filtered > ",output_diff_counts," && rm final_header.tmp", sep = ""))
+  #CREATE THE FINAL HEADER USING ADJ_PVALUE AND DATADESeq2ALL ONES AND COMPRESS THE FILE
+system(paste("paste header_adj_pvalue.txt header_dataDESeq2All.txt > final_header.tmp ; gzip -c final_header.tmp dataDESeq2Filtered > ",output_diff_counts,sep = ""))
 
-end_of_analysis=Sys.time()
 sink(output_log, append=TRUE, split=TRUE)
-print(paste(Sys.time()," Analysis done in :", difftime(end_of_analysis-start_of_analysis),sep="")
+print(paste(Sys.time()," Analysis done",sep=""))
 sink()
 
-  #REMOVE THE CHUNKS FILE
+#   #REMOVE THE CHUNKS FILE
 system(paste("rm -rf",output_tmp))
