@@ -1,5 +1,3 @@
-start_of_analysis = Sys.time()
-
 if (!require("data.table")) {
   install.packages("data.table", repos="http://cran.rstudio.com/",dependencies=TRUE) 
   library("data.table")
@@ -51,12 +49,13 @@ system(paste("zcat ",raw_counts,
        " ; mv ",output_tmp,"SHUFFLE_tmp.gz ",output_dir,
        " ; mv ",output_dir,"SHUFFLE_tmp.gz ",data_path,sep=""))
 
-end_shuffle = Sys.time()
 
-print(paste("Temps :",difftime(end_shuffle,start_shuffle)))
+sink(output_log, append=TRUE, split=TRUE)
+print(paste(Sys.time(),"Shuffle done")))
+sink()
 
 #SAVE THE HEADER INTO A FILE
-system(paste("zcat ",raw_counts," | head -1 > ",output_dir,"header.txt",sep=""))
+system(paste("zcat ",raw_counts," | head -1 > ",output_dir,"header_raw_counts.txt",sep=""))
 
 # SPLIT THE MAIN FILE INTO CHUNKS WITH AUTOINCREMENTED NAMES
 
@@ -73,7 +72,10 @@ nb_line_last_file=system(paste("cd ",output_tmp," ; cat $(ls | sort -n | grep su
 
 if(nb_line_last_file < (split_lines/2)){
 
-  print(paste("The last file has",nb_line_last_file,"line(s) it will be concatenated to the second last one"))
+  sink(output_log, append=TRUE, split=TRUE)
+  print(paste(Sys.time(),"The last file has",nb_line_last_file,"line(s) it will be concatenated to the second last one"))
+  sink()
+  
   system(paste("cd ",output_tmp," ; file_number=$(ls | grep subfile|wc -l) ",
                "; file_number=$(echo $((file_number-1)))",
                "; last_2_files=$(ls | sort -n | grep subfile | tail -2)",
@@ -84,7 +86,9 @@ if(nb_line_last_file < (split_lines/2)){
                
   nb_line_last_file=system(paste("cd ",output_dir," ; cat $(ls | sort -n | grep subfile |tail -1)|wc -l", sep=""), intern=TRUE)
   
-  print(paste("The last file has",nb_line_last_file,"line(s) it will be splitted in two"))
+  sink(output_log, append=TRUE, split=TRUE)
+  print(paste(Sys.time(),"The last file has",nb_line_last_file,"line(s) it will be splitted in two"))
+  sink()
   
   system(paste("cd ",output_dir," ; file_number=$(ls | grep subfile | wc -l) ",
                "; last_file=$(ls | sort -n | grep subfile | tail -1)",
@@ -101,8 +105,7 @@ sink()
 
 ## LOADING DATA
 lst_files = system(paste("find",output_tmp,"-iname \"*_subfile.txt\" | sort -n"), intern = TRUE)
-header = as.character(unlist(read.table(file = paste(output_tmp,"header_large_file.txt",sep=""), sep = "\t", header = FALSE)))
-
+header = as.character(unlist(read.table(file = paste(output_tmp,"header_raw_counts.txt",sep=""), sep = "\t", header = FALSE)))
 
 sink(output_log, append=TRUE, split=TRUE)
 print(paste(Sys.time(),"Foreach on the", length(lst_files),"files"))
@@ -184,10 +187,8 @@ invisible(foreach(i=1:length(lst_files)) %dopar%{
 
 }) #END FOREACH
 
-after_foreach<-Sys.time()
-
 sink(output_log, append=TRUE, split=TRUE)
-print(paste(Sys.time(),"Foreach done in : ",after_foreach-before_foreach))
+print(paste(Sys.time(),"Foreach done"))
 sink()
   
   #MERGE ALL CHUNKS PVALUE INTO A FILE
@@ -224,8 +225,10 @@ write.table(adjPvalue_dataframe,
             sep="\t",quote=FALSE,
             col.names = TRUE,
             row.names = FALSE)
-  
+
+sink(output_log, append=TRUE, split=TRUE)  
 print(paste(Sys.time(),"Pvalue are adjusted"))
+sink()
   
   #SAVE THE HEADER
 system(paste("head -1 adj_pvalue > header_adj_pvalue.txt ; sed -i 1d adj_pvalue",sep=""))
