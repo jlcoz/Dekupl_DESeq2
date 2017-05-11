@@ -436,7 +436,7 @@ rule filter_gencode_counts:
 ###############################################################################
 #
 # STEP 4: SELECT DIFFERENTIALLY EXPRESSED K-MERS
-#         Apply a T-test on all new k-mers to select only those that are
+#         Apply a DESeq2 on all new k-mers to select only those that are
 #         differentially expressed.
 #
 rule test_diff_counts:
