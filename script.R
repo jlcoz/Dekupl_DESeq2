@@ -96,7 +96,7 @@ if(nb_line_last_file < (split_lines/2)){
                "; file_number=$(echo $((file_number-2)))",
                "; rm ${file_number}_subfile.txt",
                sep=""))
-
+}
   ## LOAD THE FILENAMES OF THE DIFFERENT CHUNKS
 lst_files = system(paste("find",output_tmp_chunks,"-iname \"*_subfile.txt\" | sort -n"), intern = TRUE)
         
