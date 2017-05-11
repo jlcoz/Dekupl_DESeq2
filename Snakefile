@@ -46,7 +46,7 @@ REFERENCE_DIR   = "/data/references"
 RAW_COUNTS                  = COUNTS_DIR    + "/raw-counts.tsv.gz"
 NO_GENCODE_COUNTS           = COUNTS_DIR    + "/noGENCODE-counts.tsv.gz"
 DIFF_COUNTS                 = KMER_DE_DIR   + "/diff-counts.tsv.gz"
-PVALUE_ALL                  = KMER_DE_DIR   + "/pvalue_all.tsv
+PVALUE_ALL                  = KMER_DE_DIR   + "/pvalue_all.tsv"
 MERGED_DIFF_COUNTS          = KMER_DE_DIR   + "/merged-diff-counts.tsv.gz"
 ASSEMBLIES_FASTA            = KMER_DE_DIR   + "/merged-diff-counts.fa.gz"
 ASSEMBLIES_BAM              = KMER_DE_DIR   + "/merged-diff-counts.bam"
@@ -172,7 +172,13 @@ rule gsnap_index:
 #
 # UTILS
 #
-# Create a tabulated file with the sample name and conditions
+# Create :
+#     
+#    1 - A tabulated file with the sample names and conditions
+#    2 - A tabulated file with the sample names and normalization factors
+#    3 - A tabulated file with the sample names, condition and normalization factors
+# 
+
 rule sample_conditions:
   output: SAMPLE_CONDITIONS
   run:
@@ -180,6 +186,14 @@ rule sample_conditions:
       f.write("\t".join(["sample",CONDITION_COL]) + "\n")
       for sample in config["samples"]:
         f.write("\t".join([sample["name"],sample[CONDITION_COL]]) + "\n")
+        
+rule compute_normalization_factors:
+  input: 
+    NO_GENCODE_COUNTS
+  output:
+    NORMALIZATION_FACTORS
+  script: "compute_norm_factors.R"
+  log: LOGS
 
 rule sample_conditions_full:
   input:
@@ -188,7 +202,6 @@ rule sample_conditions_full:
   output:
     SAMPLE_CONDITIONS_FULL
   shell: "join --header {input.sample_conditions} {input.normalization_factors} > {output}"
-
 
 ###############################################################################
 #
@@ -432,12 +445,12 @@ rule filter_gencode_counts:
 #
 rule test_diff_counts:
   input:
-    counts = NO_GENCODE_COUNTS
+    counts = NO_GENCODE_COUNTS,
+    sample_conditions = SAMPLE_CONDITIONS_FULL
   output: 
     diff_counts = DIFF_COUNTS,
-    pvalue_all = PVALUE_ALL,
-    norm_factors = NORMALIZATION_FACTORS
-  log = LOGS
+    pvalue_all = PVALUE_ALL
+  log : LOGS
   threads:6
   script: "./script.R"
 
