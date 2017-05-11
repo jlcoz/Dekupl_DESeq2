@@ -282,7 +282,6 @@ rule differential_gene_expression:
     sample_conditions = SAMPLE_CONDITIONS
   output:
     differentially_expressed_genes = DEGS,
-    normalization_factors          = NORMALIZATION_FACTORS,
     dist_matrix			   = DIST_MATRIX,
     norm_counts		           = NORMALIZED_COUNTS,
     pca_design = PCA_DESIGN
@@ -319,14 +318,6 @@ rule differential_gene_expression:
     #writing in a file normalized counts
     normalized_counts<-data.frame(id=row.names(NormCount),NormCount,row.names=NULL)
     write.table(normalized_counts,file=\\\"{output.norm_counts}\\\", sep=\\\"\t\\\",row.names=F, col.names=T, quote=F)
-
-    # Write normalization factors
-    size_factors = data.frame(sample = names(sizeFactors(dds)), 
-                              normalization_factor = sizeFactors(dds),
-                              row.names=NULL)
-    write.table(size_factors,
-                file=\\\"{output.normalization_factors}\\\",
-                sep=\\\"\t\\\",quote=FALSE, row.names = FALSE)
 
     write(resultsNames(dds),stderr())
 
@@ -445,7 +436,8 @@ rule test_diff_counts:
     sample_conditions = SAMPLE_CONDITIONS_FULL
   output: 
     diff_counts = DIFF_COUNTS
-    pvalue_all = PVALUE_ALL
+    pvalue_all = PVALUE_ALL,
+    norm_factors = NORMALIZATION_FACTORS
   log = LOGS
   threads:6
   script: "./script.R"
