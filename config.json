@@ -1,5 +1,5 @@
 {
-  "tmp_dir": "/home/jlcoz/Dekupl_DESeq2/tmp/",
+  "tmp_dir": "/tmp/",
   "fastq_dir": "data",
   "nb_threads": 10,
   "max_memory": 8000,
@@ -8,6 +8,9 @@
   "lib_type": "rf",
   "r1_suffix": "_R1_fastq.gz", 
   "r2_suffix": "_R2_fastq.gz",
+  "diff_method": "Ttest_diff_method.R",
+  "sampling_size":1000000,
+  "chunk_size":500,
 
   "dekupl_counter": {
     "min_recurrence": 6,
