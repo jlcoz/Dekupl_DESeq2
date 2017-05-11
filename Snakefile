@@ -5,7 +5,6 @@ from snakemake.utils import R
 
 __author__ = "Jérôme Audoux (jerome.audoux@inserm.fr)"
 
-
 def getRAM():
     mem_bytes = os.sysconf('SC_PAGE_SIZE') * os.sysconf('SC_PHYS_PAGES')
     mem_gbytes = mem_bytes/(1024.**3)
@@ -30,6 +29,9 @@ R2_SUFFIX       = config['r2_suffix']
 
 if 'lib_type' in config:
   LIB_TYPE = config['lib_type']
+  
+# GET THE METHOD USE FOR DETECT DE KMERS
+TEST_DIFF_SCRIPT = config['diff_method']
 
 # DIRECTORIES
 BIN_DIR         = "/bin/dekupl/bin"
@@ -46,7 +48,7 @@ REFERENCE_DIR   = "/data/references"
 RAW_COUNTS                  = COUNTS_DIR    + "/raw-counts.tsv.gz"
 NO_GENCODE_COUNTS           = COUNTS_DIR    + "/noGENCODE-counts.tsv.gz"
 DIFF_COUNTS                 = KMER_DE_DIR   + "/diff-counts.tsv.gz"
-PVALUE_ALL                  = KMER_DE_DIR   + "/pvalue_all.tsv"
+PVALUE_ALL                  = KMER_DE_DIR   + "/raw_pvals.txt"
 MERGED_DIFF_COUNTS          = KMER_DE_DIR   + "/merged-diff-counts.tsv.gz"
 ASSEMBLIES_FASTA            = KMER_DE_DIR   + "/merged-diff-counts.fa.gz"
 ASSEMBLIES_BAM              = KMER_DE_DIR   + "/merged-diff-counts.bam"
@@ -66,6 +68,7 @@ NORMALIZATION_FACTORS       = GENE_EXP_DIR  + "/normalization_factors.tsv"
 NORMALIZED_COUNTS	        = GENE_EXP_DIR  + "/normalized_counts.tsv"
 DIST_MATRIX                 = GENE_EXP_DIR  + "/clustering_of_samples.pdf"
 PCA_DESIGN                  = GENE_EXP_DIR  + "/pca_design.tsv"
+
 # binaries
 REVCOMP         = "/bin/revCompFastq.pl"
 DEKUPL_COUNTER  = BIN_DIR + "/dekupl-counter"
@@ -446,13 +449,14 @@ rule filter_gencode_counts:
 rule test_diff_counts:
   input:
     counts = NO_GENCODE_COUNTS,
-    sample_conditions = SAMPLE_CONDITIONS_FULL
+    sample_conditions = SAMPLE_CONDITIONS_FULL,
+    Ttest_filter = TTEST_FILTER
   output: 
     diff_counts = DIFF_COUNTS,
     pvalue_all = PVALUE_ALL
-  log : LOGS
+  log: LOGS
   threads:6
-  script: "./script.R"
+  script: TEST_DIFF_SCRIPT
 
 rule merge_tags:
   input:
