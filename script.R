@@ -113,8 +113,26 @@ sink(output_log, append=TRUE, split=TRUE)
 print(paste(Sys.time(),"Foreach on the", length(lst_files),"files"))
 sink()
 
-  ## LOADING PRIOR KNOWN NORMALIZATION FACTORS
-size_factors = data.frame(fread(paste("cat ",normalization_factor_path," | awk '{print $1,$3}'")))
+  ## COMPUTE THE NORMALIZATION FACTORS
+
+system(paste("zcat ",no_GENCODE,
+             " | awk '{nb_kmers=0;}",
+             "{if(nb_kmers==100000)exit 1;if(NR % 30 ==0 || NR ==1){print $0;nb_kmers++;}}' > selected_kmers",sep=""))
+
+selected_kmers_counts <- data.frame(fread(paste("selected_kmers")))
+
+loggeomeans <- rowMeans(log(selected_kmers_counts[,2:ncol(selected_kmers_counts)]))
+
+normFactors <- apply(selected_kmers_counts[,2:ncol(selected_kmers_counts)], 2, function(cnts) { exp(median((log(cnts) - loggeomeans)[is.finite(loggeomeans) &
+                                                                                                cnts > 0]))})
+
+  ## WRITE THE NORMALIZATION FACTORS
+
+write.table(file = output_norm_factors,
+            data.frame(sample=names(normFactors),normalization_factor=as.vector(normFactors)),
+            sep="\t",
+            quote=FALSE,
+            row.names = FALSE)
 
   ## DESeq2 ANALYSIS ON EACH CHUNKS
 invisible(foreach(i=1:length(lst_files)) %dopar%{
@@ -141,7 +159,7 @@ invisible(foreach(i=1:length(lst_files)) %dopar%{
 
     ## USE THE PRIOR KNOWN NORMALIZATION FACTORS
 
-  normFactors <- matrix(size_factors[,2],
+  normFactors <- matrix(size_factors,
                         ncol=ncol(dds),nrow=nrow(dds),
                         dimnames=list(1:nrow(dds),1:ncol(dds)),
                         byrow = TRUE)
