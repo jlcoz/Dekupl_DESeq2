@@ -81,7 +81,7 @@ if(nb_line_last_file < (split_lines/2)){
                "; last_2_files=$(ls | sort -n | grep subfile | tail -2)",
                "; cat $last_2_files > tmp_concat ",
                "&& mv tmp_concat ${file_number}_subfile.txt",
-               "&& rm $((file_number+1))_subfile.txt ",
+               "&& rm $((file_number))_subfile.txt ",
                sep=""))
   
     nb_line_last_file=system(paste("cd ",output_tmp_chunks," ; cat $(ls | sort -n | grep subfile |tail -1)|wc -l", sep=""), intern=TRUE)
