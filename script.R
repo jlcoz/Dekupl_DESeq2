@@ -74,17 +74,15 @@ nb_line_last_file=as.numeric(system(paste("cd ",output_tmp_chunks," ; cat $(ls |
   ## AND THEN IS DIVIDED IN TWO
 if(nb_line_last_file < (split_lines/2)){
 
-      ## CONCATENATE THE FILES
+    ## CONCATENATE THE 2 FILES
     print(paste(Sys.time(),"The last file has",nb_line_last_file,"line(s) it will be concatenated to the second last one"))
     system(paste("cd ",output_tmp_chunks," ; file_number=$(ls | grep subfile | wc -l) ",
                "; file_number=$(echo $((file_number)))",
                "; last_2_files=$(ls | sort -n | grep subfile | tail -2)",
                "; cat $last_2_files > tmp_concat ",
-               "&& mv tmp_concat ${file_number}_subfile.txt",
-               "&& rm $((file_number))_subfile.txt ",
-               sep=""))
+               "; mv tmp_concat ${file_number}_subfile.txt",sep=""))
   
-    nb_line_last_file=system(paste("cd ",output_tmp_chunks," ; cat $(ls | sort -n | grep subfile |tail -1)|wc -l", sep=""), intern=TRUE)
+    nb_line_last_file=system(paste("cd ",output_tmp_chunks," ; cat $(ls | sort -n | grep subfile | tail -1) | wc -l", sep=""), intern=TRUE)
   
     print(paste(Sys.time(),"The last file has",nb_line_last_file,"line(s) it will be splitted in two"))
   
@@ -95,8 +93,9 @@ if(nb_line_last_file < (split_lines/2)){
                "; mv xaa ${file_number}_subfile.txt",
                "; file_number=$(echo $((file_number+1)))",
                "; mv xab ${file_number}_subfile.txt",
+               "; file_number=$(echo $((file_number-2)))",
+               "; rm ${file_number}_subfile.txt",
                sep=""))
-}
 
   ## LOAD THE FILENAMES OF THE DIFFERENT CHUNKS
 lst_files = system(paste("find",output_tmp_chunks,"-iname \"*_subfile.txt\" | sort -n"), intern = TRUE)
