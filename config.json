@@ -1,5 +1,5 @@
 {
-  "tmp_dir": "/home2/DESeq2/tmp/",
+  "tmp_dir": "/home/jlcoz/Dekupl_DESeq2/tmp/",
   "fastq_dir": "data",
   "nb_threads": 10,
   "max_memory": 8000,

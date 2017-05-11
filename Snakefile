@@ -444,7 +444,7 @@ rule test_diff_counts:
     counts = NO_GENCODE_COUNTS,
     sample_conditions = SAMPLE_CONDITIONS_FULL
   output: 
-    diff_counts = DIFF_COUNTS
+    diff_counts = DIFF_COUNTS,
     pvalue_all = PVALUE_ALL
   log = LOGS
   threads:6
