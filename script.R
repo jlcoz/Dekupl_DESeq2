@@ -32,6 +32,7 @@ nb_core=snakemake@config$nb_threads
 output_tmp=snakemake@config$tmp_dir
 output_diff_counts=snakemake@output$diff_counts
 output_pvalue_all=snakemake@output$pvalue_all
+output_norm_factors=snakemake@output$norm_factors
 
 output_log=snakemake@log[[1]]
 
@@ -112,7 +113,7 @@ sink(output_log, append=TRUE, split=TRUE)
 print(paste(Sys.time(),"Foreach on the", length(lst_files),"files"))
 sink()
 
-  ## LOADING PRIOR KNOWN NORMALISATION FACTORS
+  ## LOADING PRIOR KNOWN NORMALIZATION FACTORS
 size_factors = data.frame(fread(paste("cat ",normalization_factor_path," | awk '{print $1,$3}'")))
 
   ## DESeq2 ANALYSIS ON EACH CHUNKS
