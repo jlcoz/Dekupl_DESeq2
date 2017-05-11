@@ -432,10 +432,9 @@ rule filter_gencode_counts:
 #
 rule test_diff_counts:
   input:
-    counts = NO_GENCODE_COUNTS,
-    sample_conditions = SAMPLE_CONDITIONS_FULL
+    counts = NO_GENCODE_COUNTS
   output: 
-    diff_counts = DIFF_COUNTS
+    diff_counts = DIFF_COUNTS,
     pvalue_all = PVALUE_ALL,
     norm_factors = NORMALIZATION_FACTORS
   log = LOGS
