@@ -131,8 +131,7 @@ sink()
 size_factors = data.frame(fread(paste("cat ",normalization_factor_path," | awk '{print $1,$3}'")))
 
 #DESeq2 ANALYSIS ON EACH CHUNKS
-#invisible(foreach(i=1:length(lst_files)) %dopar%{
-for(i in 1:length(lst_files)){
+invisible(foreach(i=1:length(lst_files)) %dopar%{
 
   bigTab=data.frame(fread(paste(lst_files[i]),header=FALSE))
   #SET TAGS AS ROWNAMES
@@ -200,8 +199,7 @@ for(i in 1:length(lst_files)){
                 sep="\t",quote=FALSE,
                 row.names = FALSE,
                 col.names = FALSE)
-}
-#}) #END FOREACH
+}) #END FOREACH
 
 sink(output_log, append=TRUE, split=TRUE)
 print(paste(Sys.time(),"Foreach done"))
@@ -211,14 +209,14 @@ sink()
 system(paste("find ",output_tmp_DESeq2," -name '*_pvalue_part_tmp' | xargs cat > ",output_pvalue_all,sep=""))
 
 sink(output_log, append=TRUE, split=TRUE)
-print(paste(Sys.time(),"Pvalues merged into pvalueAll file"))
+print(paste(Sys.time(),"Pvalues merged into",output_pvalue_all,sep=""))
 sink()
 
   #MERGE ALL CHUNKS DESeq2 INTO A FILE
 system(paste("find ",output_tmp_DESeq2," -name '*_dataDESeq2_part_tmp' | xargs cat | awk '{OFS=\"\\t\"}{if(NR==1){print}else{if($1 !~ \"ID\"){print}}}' > dataDESeq2All", sep=""))
 
 sink(output_log, append=TRUE, split=TRUE)
-print(paste(Sys.time(),"DESeq 2 results merged into dataDESeq2All file"))
+print(paste(Sys.time(),"DESeq2 results merged into dataDESeq2All file"))
 sink()
 
   #SAVE THE COLNAMES INTO HEADER.TXT AND REMOVE THE COLNAME ID
@@ -244,7 +242,7 @@ write.table(adjPvalue_dataframe,
             row.names = FALSE)
 
 sink(output_log, append=TRUE, split=TRUE)
-print(paste(Sys.time(),"Pvalue are adjusted"))
+print(paste(Sys.time(),"Pvalues are adjusted"))
 sink()
 
   #SAVE THE HEADER
@@ -255,7 +253,7 @@ system(paste("head -1 adj_pvalue > header_adj_pvalue.txt ; sed -i 1d adj_pvalue"
 system(paste("sort -k1,1 adj_pvalue > sorted_adj_pvalue_tmp ; sort -k1,1 dataDESeq2All > sorted_dataDESeq2All_tmp ; join sorted_adj_pvalue_tmp sorted_dataDESeq2All_tmp | tr ' ' '\t' > dataDESeq2Filtered",sep = ""))
 
 sink(output_log, append=TRUE, split=TRUE)
-print(paste(Sys.time(),"Pvalue and rest of data merged"))
+print(paste(Sys.time(),"Get counts for pvalues that passed the filter"))
 sink()
 
   #CREATE THE FINAL HEADER USING ADJ_PVALUE AND DATADESeq2ALL ONES AND COMPRESS THE FILE
