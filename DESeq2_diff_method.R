@@ -47,7 +47,7 @@ split_lines = snakemake@config$chunk_size
 if(split_lines > 1000000){
 
 sink(output_log, append=TRUE, split=TRUE)
-print(paste(Sys.time(),"Chunks too large for DESeq2 computations, reduce from",split_lines,"to 1 000 000))
+print(paste(Sys.time(),"Chunks too large for DESeq2 computations, reduce from",split_lines,"to 1 000 000"))
 sink()
 
 split_lines = 1000000
@@ -88,7 +88,9 @@ nb_line_last_file=as.numeric(system(paste("cd ",output_tmp_chunks," ; cat $(ls |
 if(nb_line_last_file < (split_lines/2)){
 
     ## CONCATENATE THE 2 FILES
+    sink(output_log, append=TRUE, split=TRUE)
     print(paste(Sys.time(),"The last file has",nb_line_last_file,"line(s) it will be concatenated to the second last one"))
+    sink()
     system(paste("cd ",output_tmp_chunks," ; file_number=$(ls | grep subfile | wc -l) ",
                "; file_number=$(echo $((file_number)))",
                "; last_2_files=$(ls | sort -n | grep subfile | tail -2)",
@@ -96,18 +98,19 @@ if(nb_line_last_file < (split_lines/2)){
                "; mv tmp_concat ${file_number}_subfile.txt",sep=""))
   
     nb_line_last_file=system(paste("cd ",output_tmp_chunks," ; cat $(ls | sort -n | grep subfile | tail -1) | wc -l", sep=""), intern=TRUE)
-  
+ 
+    sink(output_log, append=TRUE, split=TRUE)
     print(paste(Sys.time(),"The last file has",nb_line_last_file,"line(s) it will be splitted in two"))
+    sink()
   
       ## DIVIDE IN TWO PARTS
     system(paste("cd ",output_tmp_chunks," ; file_number=$(ls | grep subfile | wc -l) ",
                "; last_file=$(ls | sort -n | grep subfile | tail -1)",
                "; split -n l/2 $last_file",
+               "; file_number=$(echo $((file_number-1)))",
                "; mv xaa ${file_number}_subfile.txt",
                "; file_number=$(echo $((file_number+1)))",
                "; mv xab ${file_number}_subfile.txt",
-               "; file_number=$(echo $((file_number-2)))",
-               "; rm ${file_number}_subfile.txt",
                sep=""))
 }
 
