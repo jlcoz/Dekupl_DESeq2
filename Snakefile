@@ -192,7 +192,7 @@ rule sample_conditions:
         
 rule compute_normalization_factors:
   input: 
-    NO_GENCODE_COUNTS
+    GENE_COUNTS
   output:
     NORMALIZATION_FACTORS
   script: "compute_norm_factors.R"
@@ -454,7 +454,7 @@ rule test_diff_counts:
   output: 
     diff_counts = DIFF_COUNTS,
     pvalue_all = PVALUE_ALL
-  log: LOGS
+  log: LOGS + "/test_diff_counts.logs"
   threads:6
   script: TEST_DIFF_SCRIPT
 
