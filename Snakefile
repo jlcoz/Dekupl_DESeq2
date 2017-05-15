@@ -26,6 +26,7 @@ MAX_CPU         = 1000
 MAX_RAM         = getRAM()
 R1_SUFFIX       = config['r1_suffix']
 R2_SUFFIX       = config['r2_suffix']
+SAMPLING_SIZE   = config['sampling_size']
 
 if 'lib_type' in config:
   LIB_TYPE = config['lib_type']
@@ -192,7 +193,8 @@ rule sample_conditions:
         
 rule compute_normalization_factors:
   input: 
-    GENE_COUNTS
+    gene_counts = GENE_COUNTS,
+    sampling_size = SAMPLING_SIZE 
   output:
     NORMALIZATION_FACTORS
   script: "compute_norm_factors.R"
