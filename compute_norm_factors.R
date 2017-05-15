@@ -4,21 +4,22 @@ if (!require("data.table")) {
 }
 
   ## SET UP VARS
-no_GENCODE=snakemake@input
+data=snakemake@input$gene_counts
 output_tmp=snakemake@config$tmp_dir
 output_norm_factors=snakemake@output
 
-sampling_size = 1000000
+sampling_size = snakemake@input$sampling_size
+seed = 30
 
 dir.create(output_tmp, showWarnings = FALSE)
 
 setwd(output_tmp)
 
   ## SAMPLING
-system(paste("zcat ",no_GENCODE,
-             " | awk -v sampling_size=",sampling_size,
+system(paste("zcat ",data,
+             " | awk -v sampling_size=",sampling_size," -v seed=",seed,
              " 'BEGIN{nb_kmers=0;}",
-             "{if(nb_kmers==sampling_size)exit 1;if(NR % 30 ==0 || NR ==1){print $0;nb_kmers++;}}' > selected_kmers",sep=""))
+             "{if(nb_kmers==sampling_size)exit 1;if(NR % seed ==0 || NR ==1){print $0;nb_kmers++;}}' > selected_kmers",sep=""))
 
 selected_kmers_counts <- data.frame(fread(paste("selected_kmers")))
  
