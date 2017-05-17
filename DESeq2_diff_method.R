@@ -1,24 +1,7 @@
-if (!require("data.table")) {
-  install.packages("data.table", repos="http://cran.rstudio.com/",dependencies=TRUE) 
-  library("data.table")
-}
-
-if (!require("foreach")) {
-  install.packages("foreach", repos="http://cran.rstudio.com/",dependencies=TRUE) 
-  library("foreach")
-}
-
-if (!require("doParallel")) {
-  install.packages("doParallel", repos="http://cran.rstudio.com/",dependencies=TRUE) 
-  library("doParallel")
-}
-
-if (!require("DESeq2")) {
-  source("http://bioconductor.org/biocLite.R")
-  biocLite("Biobase")
-  biocLite("DESeq2")
-  library("DESeq2")
-}
+library("data.table")
+library("foreach")
+library("doParallel")
+library("DESeq2")
 
 no_GENCODE=snakemake@input$counts
 normalization_factor_path = snakemake@input$sample_conditions
@@ -43,6 +26,10 @@ dir.create(output_tmp_chunks, showWarnings = FALSE)
 dir.create(output_tmp_DESeq2, showWarnings = FALSE)
 
 split_lines = snakemake@config$chunk_size
+
+sink(output_log, append=TRUE, split=TRUE)
+print(paste(Sys.time(),"Start DESeq2_diff_methods"))
+sink()
 
 if(split_lines > 1000000){
 
@@ -124,7 +111,7 @@ sink()
 header = as.character(unlist(read.table(file = "header_no_GENCODE.txt", sep = "\t", header = FALSE)))
 
 sink(output_log, append=TRUE, split=TRUE)
-print(paste(Sys.time(),"Foreach on the", length(lst_files),"files"))
+print(paste(Sys.time(),"Foreach on the",length(lst_files),"files"))
 sink()
 
  ## LOADING PRIOR KNOWN NORMALISATION FACTORS
@@ -209,7 +196,7 @@ sink()
 system(paste("find ",output_tmp_DESeq2," -name '*_pvalue_part_tmp' | xargs cat > ",output_pvalue_all,sep=""))
 
 sink(output_log, append=TRUE, split=TRUE)
-print(paste(Sys.time(),"Pvalues merged into",output_pvalue_all,sep=""))
+print(paste(Sys.time(),"Pvalues merged into",output_pvalue_all))
 sink()
 
   #MERGE ALL CHUNKS DESeq2 INTO A FILE
@@ -260,8 +247,5 @@ sink()
 system(paste("paste header_adj_pvalue.txt header_dataDESeq2All.txt > final_header.tmp ; gzip -c final_header.tmp dataDESeq2Filtered > ",output_diff_counts,sep = ""))
 
 sink(output_log, append=TRUE, split=TRUE)
-print(paste(Sys.time()," Analysis done",sep=""))
+print(paste(Sys.time(),"Analysis done"))
 sink()
-
-#   #REMOVE THE CHUNKS FILE
-system(paste("rm -rf",output_tmp))
