@@ -93,7 +93,17 @@ LOGS            = "/data/Logs"
 COMPUTE_NORM_FACTORS  = BIN_DIR + "/compute_norm_factors.R"
 SEED                  = config['seed']
 
-# GET THE METHOD USE FOR DETECT DE KMERS
+# GET THE DATA USED FOR DETECT DE KMERS
+if(config['data_compute_norm_factors'] == "raw-counts"):
+  DATA_COMPUTE_NORM_FACTORS   = RAW_COUNTS
+
+else:
+  DATA_COMPUTE_NORM_FACTORS   = NO_GENCODE_COUNTS
+
+
+
+
+# GET THE METHOD USED FOR DETECT DE KMERS
 if(config['diff_method'] == "DESeq2"):
   TEST_DIFF_SCRIPT   = BIN_DIR + "/DESeq2_diff_method.R"
 
@@ -200,7 +210,7 @@ rule sample_conditions:
         
 rule compute_normalization_factors:
   input: 
-    gene_counts = GENE_COUNTS,
+    gene_counts = DATA_COMPUTE_NORM_FACTORS,
     sampling_size = SAMPLING_SIZE,
     seed = SEED
   output:
