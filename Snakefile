@@ -3,8 +3,6 @@ import os
 import gzip
 from snakemake.utils import R
 
-__author__ = "Jérôme Audoux (jerome.audoux@inserm.fr)"
-
 def getRAM():
     mem_bytes = os.sysconf('SC_PAGE_SIZE') * os.sysconf('SC_PHYS_PAGES')
     mem_gbytes = mem_bytes/(1024.**3)
@@ -31,8 +29,6 @@ SAMPLING_SIZE   = config['sampling_size']
 if 'lib_type' in config:
   LIB_TYPE = config['lib_type']
   
-# GET THE METHOD USE FOR DETECT DE KMERS
-TEST_DIFF_SCRIPT = config['diff_method']
 
 # DIRECTORIES
 BIN_DIR         = "/bin/dekupl/bin"
@@ -71,7 +67,7 @@ DIST_MATRIX                 = GENE_EXP_DIR  + "/clustering_of_samples.pdf"
 PCA_DESIGN                  = GENE_EXP_DIR  + "/pca_design.tsv"
 
 # binaries
-REVCOMP         = "/bin/revCompFastq.pl"
+REVCOMP         = BIN_DIR + "/revCompFastq.pl"
 DEKUPL_COUNTER  = BIN_DIR + "/dekupl-counter"
 DIFF_FILTER     = BIN_DIR + "/diffFilter.pl"
 TTEST_FILTER    = BIN_DIR + "/TtestFilter"
@@ -92,6 +88,17 @@ SAMTOOLS        = "docker run --rm -v /data:/data -w /data -i itsjeffreyy/samtoo
 PLOT_CHECKINGS  = BIN_DIR + "/PlotCheckings.R"
 CHECKING_PLOTS  = KMER_DE_DIR   + "/fragment_number_per_library_raw.pdf"
 LOGS            = "/data/Logs"
+
+# normalization factors computation
+COMPUTE_NORM_FACTORS  = BIN_DIR + "/compute_norm_factors.R"
+SEED                  = config['seed']
+
+# GET THE METHOD USE FOR DETECT DE KMERS
+if(config['diff_method'] == "DESeq2"):
+  TEST_DIFF_SCRIPT   = BIN_DIR + "/DESeq2_diff_method.R"
+
+else:
+  TEST_DIFF_SCRIPT   = BIN_DIR + "/Ttest_diff_method.R"
 
 rule run:
   input: ASSEMBLIES_BAM
@@ -194,11 +201,12 @@ rule sample_conditions:
 rule compute_normalization_factors:
   input: 
     gene_counts = GENE_COUNTS,
-    sampling_size = SAMPLING_SIZE 
+    sampling_size = SAMPLING_SIZE,
+    seed = SEED
   output:
     NORMALIZATION_FACTORS
-  script: "compute_norm_factors.R"
-  log: LOGS
+  script: COMPUTE_NORM_FACTORS
+  log: LOGS + "/compute_norm_factors.log"
 
 rule sample_conditions_full:
   input:
