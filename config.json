@@ -8,6 +8,7 @@
   "lib_type": "rf",
   "r1_suffix": "_R1_fastq.gz", 
   "r2_suffix": "_R2_fastq.gz",
+   "data_compute_norm_factors": "raw-counts",
   "diff_method": "Ttest_diff_method.R",
   "sampling_size":1000000,
   "chunk_size":500,
