@@ -1,7 +1,4 @@
-if (!require("data.table")) {
-  install.packages("data.table", repos="http://cran.rstudio.com/",dependencies=TRUE) 
-  library("data.table")
-}
+library("data.table")
 
   ## SET UP VARS
 data=snakemake@input$gene_counts
@@ -9,11 +6,17 @@ output_tmp=snakemake@config$tmp_dir
 output_norm_factors=snakemake@output
 
 sampling_size = snakemake@input$sampling_size
-seed = 30
+seed = snakemake@input$seed
+
+output_log=snakemake@log[[1]]
 
 dir.create(output_tmp, showWarnings = FALSE)
 
 setwd(output_tmp)
+
+sink(output_log, append=TRUE, split=TRUE)
+print(paste(Sys.time(),"Start normalization factors computation"))
+sink()
 
   ## SAMPLING
 system(paste("zcat ",data,
@@ -34,3 +37,7 @@ write.table(data.frame(sample=names(normFactors),normalization_factor=as.vector(
              sep="\t",
              quote=FALSE,
              row.names = FALSE)
+             
+sink(output_log, append=TRUE, split=TRUE)
+print(paste(Sys.time(),"Normalization factors computation done"))
+sink()
