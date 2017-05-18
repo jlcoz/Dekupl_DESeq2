@@ -19,12 +19,14 @@ print(paste(Sys.time(),"Start normalization factors computation"))
 sink()
 
   ## SAMPLING
-system(paste("zcat ",data,
-             " | awk -v sampling_size=",sampling_size," -v seed=",seed,
-             " 'BEGIN{nb_kmers=0;}",
-             "{if(nb_kmers==sampling_size)exit 1;if(NR % seed ==0 || NR ==1){print $0;nb_kmers++;}}' > selected_kmers",sep=""))
+  ## SELECT 33% OF THE TOTAL NUMBER OF K-MERS FOR THE SAMPLING 
+system(paste("cat ",file," | awk '{if(NR % 3 ==0 || NR ==1){print $0}}' > selected_kmers",sep=""))
 
 selected_kmers_counts <- data.frame(fread(paste("selected_kmers")))
+
+sink(output_log, append=TRUE, split=TRUE)
+print(paste("Number of kmers :",nrow(selected_kmers_counts)-1))
+sink()
  
 loggeomeans <- rowMeans(log(selected_kmers_counts[,2:ncol(selected_kmers_counts)]))
 
