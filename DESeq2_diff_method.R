@@ -117,10 +117,10 @@ sink()
  ## LOADING PRIOR KNOWN NORMALISATION FACTORS
 size_factors = data.frame(fread(paste("cat ",normalization_factor_path," | awk '{print $1,$3}'")))
 
-#DESeq2 ANALYSIS ON EACH CHUNKS
-invisible(foreach(i=1:length(lst_files)) %dopar%{
+ ## AVOIDING ERROR WHERE THE LIST HAS ONLY ONE ELEMENT, FOREACH CRASH
+if(length(lst_file)==1){
 
-  bigTab=data.frame(fread(paste(lst_files[i]),header=FALSE))
+  bigTab=data.frame(fread(paste(lst_files),header=FALSE))
   #SET TAGS AS ROWNAMES
   rownames(bigTab)=bigTab[,1]
   #REMOVE THE TAG AS A COLUMN
@@ -175,18 +175,89 @@ invisible(foreach(i=1:length(lst_files)) %dopar%{
                          meanB=rowMeans(NormCount[,(as.numeric(nb_conditionA)+1):(as.numeric(nb_conditionA)+as.numeric(nb_conditionB))]),
                          log2FC=resDESeq2$log2FoldChange,
                          NormCount),
-              file=paste(output_tmp_DESeq2,i,"_dataDESeq2_part_tmp", sep=""),
+              file=paste(output_tmp_DESeq2,"1_dataDESeq2_part_tmp", sep=""),
               sep="\t",quote=FALSE,
               row.names = FALSE,
               col.names = TRUE)
 
   # WRITE PVALUES FOR THE CURRENT CHUNK
   write.table(data.frame(ID=rownames(resDESeq2),pvalue=resDESeq2$pvalue),
+                file=paste(output_tmp_DESeq2,"1_pvalue_part_tmp",sep=""),
+                sep="\t",quote=FALSE,
+                row.names = FALSE,
+                col.names = FALSE)
+
+}else{
+#DESeq2 ANALYSIS ON EACH CHUNKS
+  invisible(foreach(i=1:length(lst_files)) %dopar%{
+
+    bigTab=data.frame(fread(paste(lst_files[i]),header=FALSE))
+    #SET TAGS AS ROWNAMES
+    rownames(bigTab)=bigTab[,1]
+    #REMOVE THE TAG AS A COLUMN
+    bigTab=bigTab[,2:ncol(bigTab)]
+    names(bigTab)=header[2:length(header)]
+
+    #FORMAT COLS DATA
+    colDat <- data.frame(conds=factor(c(rep(0,nb_conditionA),rep(1,nb_conditionB))))
+
+    countData = as.matrix(bigTab)
+
+    dds <- DESeqDataSetFromMatrix(countData,
+                                colData = colDat,
+                                design = ~ conds)
+
+    NormCount_names = colnames(bigTab)
+    rm(bigTab);gc()
+
+    #RUN DESEQ2 AND COLLECT DESeq2 results
+
+    #REPLACE SIZE FACTORS by SIZE FACTORS COMPUTED ON
+    #THE ALL DATASET
+
+    normFactors <- matrix(size_factors[,2],
+                        ncol=ncol(dds),nrow=nrow(dds),
+                        dimnames=list(1:nrow(dds),1:ncol(dds)),
+                        byrow = TRUE)
+                        
+    normalizationFactors(dds) <- normFactors
+
+    #RUN DESeq2
+    dds <- estimateDispersionsGeneEst(dds)
+    dds <- estimateDispersionsFit(dds)
+    dds <- estimateDispersionsMAP(dds)
+    dds <- nbinomWaldTest(dds)
+    resDESeq2 <- results(dds, pAdjustMethod = "none")
+
+    #COLLECT COUNTS
+    NormCount<- as.data.frame(counts(dds, normalized=TRUE))
+    names(NormCount) <- NormCount_names
+
+    # WRITE A TSV WITH THIS FORMAT FOR THE CURRENT CHUNK
+    # Kmer_ID
+    # meanA
+    # meanB
+    # log2FC
+    # NormCount
+
+    write.table(data.frame(ID=rownames(resDESeq2),
+                         meanA=rowMeans(NormCount[,1:nb_conditionA]),
+                         meanB=rowMeans(NormCount[,(as.numeric(nb_conditionA)+1):(as.numeric(nb_conditionA)+as.numeric(nb_conditionB))]),
+                         log2FC=resDESeq2$log2FoldChange,
+                         NormCount),
+                file=paste(output_tmp_DESeq2,i,"_dataDESeq2_part_tmp", sep=""),
+                sep="\t",quote=FALSE,
+                row.names = FALSE,
+                col.names = TRUE)
+
+    # WRITE PVALUES FOR THE CURRENT CHUNK
+    write.table(data.frame(ID=rownames(resDESeq2),pvalue=resDESeq2$pvalue),
                 file=paste(output_tmp_DESeq2,i,"_pvalue_part_tmp",sep=""),
                 sep="\t",quote=FALSE,
                 row.names = FALSE,
                 col.names = FALSE)
-}) #END FOREACH
+  }) #END FOREACH
+} #END ELSE
 
 sink(output_log, append=TRUE, split=TRUE)
 print(paste(Sys.time(),"Foreach done"))
