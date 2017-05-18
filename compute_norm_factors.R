@@ -5,9 +5,6 @@ data=snakemake@input$gene_counts
 output_tmp=snakemake@config$tmp_dir
 output_norm_factors=snakemake@output
 
-sampling_size = snakemake@input$sampling_size
-seed = snakemake@input$seed
-
 output_log=snakemake@log[[1]]
 
 dir.create(output_tmp, showWarnings = FALSE)
@@ -20,7 +17,7 @@ sink()
 
   ## SAMPLING
   ## SELECT 33% OF THE TOTAL NUMBER OF K-MERS FOR THE SAMPLING 
-system(paste("cat ",file," | awk '{if(NR % 3 ==0 || NR ==1){print $0}}' > selected_kmers",sep=""))
+system(paste("zcat ",file," | awk '{if(NR % 3 ==0 || NR ==1){print $0}}' > selected_kmers",sep=""))
 
 selected_kmers_counts <- data.frame(fread(paste("selected_kmers")))
 
