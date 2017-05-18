@@ -29,7 +29,6 @@ SAMPLING_SIZE   = config['sampling_size']
 if 'lib_type' in config:
   LIB_TYPE = config['lib_type']
   
-
 # DIRECTORIES
 BIN_DIR         = "/bin/dekupl/bin"
 TMP_DIR         = "/data/" + config['tmp_dir']+"/dekupl_tmp"
@@ -91,17 +90,6 @@ LOGS            = "/data/Logs"
 
 # normalization factors computation
 COMPUTE_NORM_FACTORS  = BIN_DIR + "/compute_norm_factors.R"
-SEED                  = config['seed']
-
-# GET THE DATA USED FOR DETECT DE KMERS
-if(config['data_compute_norm_factors'] == "raw-counts"):
-  DATA_COMPUTE_NORM_FACTORS   = RAW_COUNTS
-
-else:
-  DATA_COMPUTE_NORM_FACTORS   = NO_GENCODE_COUNTS
-
-
-
 
 # GET THE METHOD USED FOR DETECT DE KMERS
 if(config['diff_method'] == "DESeq2"):
@@ -210,9 +198,7 @@ rule sample_conditions:
         
 rule compute_normalization_factors:
   input: 
-    gene_counts = DATA_COMPUTE_NORM_FACTORS,
-    sampling_size = SAMPLING_SIZE,
-    seed = SEED
+    gene_counts = RAW_COUNTS
   output:
     NORMALIZATION_FACTORS
   script: COMPUTE_NORM_FACTORS
