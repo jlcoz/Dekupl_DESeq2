@@ -456,8 +456,7 @@ rule test_diff_counts:
   input:
     counts = NO_GENCODE_COUNTS,
     sample_conditions = SAMPLE_CONDITIONS_FULL,
-    Ttest_filter = TTEST_FILTER,
-    kmer_DE_dir = KMER_DE_DIR
+    Ttest_filter = TTEST_FILTER
   output: 
     diff_counts = DIFF_COUNTS,
     pvalue_all  = PVALUE_ALL
