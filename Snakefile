@@ -200,8 +200,8 @@ rule compute_normalization_factors:
     gene_counts = RAW_COUNTS
   output:
     NORMALIZATION_FACTORS
-  script: COMPUTE_NORM_FACTORS
   log: LOGS + "/compute_norm_factors.log"
+  script: COMPUTE_NORM_FACTORS
 
 rule sample_conditions_full:
   input:
@@ -452,17 +452,18 @@ rule filter_gencode_counts:
 #         differentially expressed.
 #
 rule test_diff_counts:
+  threads:6
   input:
     counts = NO_GENCODE_COUNTS,
     sample_conditions = SAMPLE_CONDITIONS_FULL,
-    Ttest_filter = TTEST_FILTER
+    Ttest_filter = TTEST_FILTER,
+    kmer_DE_dir = KMER_DE_DIR
   output: 
     diff_counts = DIFF_COUNTS,
-    pvalue_all = PVALUE_ALL
+    pvalue_all  = PVALUE_ALL
   log: LOGS + "/test_diff_counts.logs"
-  threads:6
   script: TEST_DIFF_SCRIPT
-
+ 
 rule merge_tags:
   input:
     counts = DIFF_COUNTS,
