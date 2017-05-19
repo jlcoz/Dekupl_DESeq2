@@ -16,10 +16,10 @@ output_pvalue_all=snakemake@output$pvalue_all
 
 output_log=snakemake@log[[1]]
 
-shuffle_path=paste(snakemake@config$tmp_dir,"SHUFFLE_tmp.gz",sep="")
+shuffle_path=paste(snakemake@config$tmp_dir,"/SHUFFLE_tmp.gz",sep="")
 
-output_tmp_chunks=paste(snakemake@config$tmp_dir,"tmp_chunks/",sep="")
-output_tmp_DESeq2=paste(snakemake@config$tmp_dir,"tmp_DESeq2/",sep="")
+output_tmp_chunks=paste(snakemake@config$tmp_dir,"/tmp_chunks/",sep="")
+output_tmp_DESeq2=paste(snakemake@config$tmp_dir,"/tmp_DESeq2/",sep="")
 
 dir.create(output_tmp, showWarnings = FALSE)
 dir.create(output_tmp_chunks, showWarnings = FALSE)
@@ -27,13 +27,13 @@ dir.create(output_tmp_DESeq2, showWarnings = FALSE)
 
 split_lines = snakemake@config$chunk_size
 
-sink(output_log, append=TRUE, split=TRUE)
+sink(file=paste(output_log), append=TRUE, split=TRUE)
 print(paste(Sys.time(),"Start DESeq2_diff_methods"))
 sink()
 
 if(split_lines > 1000000){
 
-sink(output_log, append=TRUE, split=TRUE)
+sink(file=paste(output_log), append=TRUE, split=TRUE)
 print(paste(Sys.time(),"Chunks too large for DESeq2 computations, reduce from",split_lines,"to 1 000 000"))
 sink()
 
@@ -52,7 +52,7 @@ system(paste("zcat ",no_GENCODE,
        " | shuf -o SHUFFLE_tmp",            
        " ; gzip -f SHUFFLE_tmp",sep=""))
 
-sink(output_log, append=TRUE, split=TRUE)
+sink(file=paste(output_log), append=TRUE, split=TRUE)
 print(paste(Sys.time(),"Shuffle done"))
 sink()
 
@@ -75,7 +75,7 @@ nb_line_last_file=as.numeric(system(paste("cd ",output_tmp_chunks," ; cat $(ls |
 if(nb_line_last_file < (split_lines/2)){
 
     ## CONCATENATE THE 2 FILES
-    sink(output_log, append=TRUE, split=TRUE)
+    sink(file=paste(output_log), append=TRUE, split=TRUE)
     print(paste(Sys.time(),"The last file has",nb_line_last_file,"line(s) it will be concatenated to the second last one"))
     sink()
     system(paste("cd ",output_tmp_chunks," ; file_number=$(ls | grep subfile | wc -l) ",
@@ -86,7 +86,7 @@ if(nb_line_last_file < (split_lines/2)){
   
     nb_line_last_file=system(paste("cd ",output_tmp_chunks," ; cat $(ls | sort -n | grep subfile | tail -1) | wc -l", sep=""), intern=TRUE)
  
-    sink(output_log, append=TRUE, split=TRUE)
+    sink(file=paste(output_log), append=TRUE, split=TRUE)
     print(paste(Sys.time(),"The last file has",nb_line_last_file,"line(s) it will be splitted in two"))
     sink()
   
@@ -183,21 +183,21 @@ invisible(foreach(i=1:length(lst_files)) %dopar%{
 
 }) #END FOREACH
 
-sink(output_log, append=TRUE, split=TRUE)
+sink(file=paste(output_log), append=TRUE, split=TRUE)
 print(paste(Sys.time(),"Foreach done"))
 sink()
 
   #MERGE ALL CHUNKS PVALUE INTO A FILE
 system(paste("find ",output_tmp_DESeq2," -name '*_pvalue_part_tmp' | xargs cat > ",output_pvalue_all,sep=""))
 
-sink(output_log, append=TRUE, split=TRUE)
+sink(file=paste(output_log), append=TRUE, split=TRUE)
 print(paste(Sys.time(),"Pvalues merged into",output_pvalue_all))
 sink()
 
   #MERGE ALL CHUNKS DESeq2 INTO A FILE
 system(paste("find ",output_tmp_DESeq2," -name '*_dataDESeq2_part_tmp' | xargs cat | awk '{OFS=\"\\t\"}{if(NR==1){print}else{if($1 !~ \"ID\"){print}}}' > dataDESeq2All", sep=""))
 
-sink(output_log, append=TRUE, split=TRUE)
+sink(file=paste(output_log), append=TRUE, split=TRUE)
 print(paste(Sys.time(),"DESeq2 results merged into dataDESeq2All file"))
 sink()
 
@@ -223,7 +223,7 @@ write.table(adjPvalue_dataframe,
             col.names = TRUE,
             row.names = FALSE)
 
-sink(output_log, append=TRUE, split=TRUE)
+sink(file=paste(output_log), append=TRUE, split=TRUE)
 print(paste(Sys.time(),"Pvalues are adjusted"))
 sink()
 
@@ -234,13 +234,13 @@ system(paste("head -1 adj_pvalue > header_adj_pvalue.txt ; sed -i 1d adj_pvalue"
   #GET ALL THE INFORMATION (ID,MEAN_A,MEAN_B,LOG2FC,COUNTS) FOR DE KMERS
 system(paste("sort -k1,1 adj_pvalue > sorted_adj_pvalue_tmp ; sort -k1,1 dataDESeq2All > sorted_dataDESeq2All_tmp ; join sorted_adj_pvalue_tmp sorted_dataDESeq2All_tmp | tr ' ' '\t' > dataDESeq2Filtered",sep = ""))
 
-sink(output_log, append=TRUE, split=TRUE)
+sink(file=paste(output_log), append=TRUE, split=TRUE)
 print(paste(Sys.time(),"Get counts for pvalues that passed the filter"))
 sink()
 
   #CREATE THE FINAL HEADER USING ADJ_PVALUE AND DATADESeq2ALL ONES AND COMPRESS THE FILE
 system(paste("paste header_adj_pvalue.txt header_dataDESeq2All.txt > final_header.tmp ; gzip -c final_header.tmp dataDESeq2Filtered > ",output_diff_counts,sep = ""))
 
-sink(output_log, append=TRUE, split=TRUE)
+sink(file=paste(output_log), append=TRUE, split=TRUE)
 print(paste(Sys.time(),"Analysis done"))
 sink()
