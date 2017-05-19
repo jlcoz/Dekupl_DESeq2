@@ -118,7 +118,7 @@ sink()
 size_factors = data.frame(fread(paste("cat ",normalization_factor_path," | awk '{print $1,$3}'")))
 
  ## AVOIDING ERROR WHERE THE LIST HAS ONLY ONE ELEMENT, FOREACH CRASH
-if(length(lst_file)==1){
+if(length(lst_files)==1){
 
   bigTab=data.frame(fread(paste(lst_files),header=FALSE))
   #SET TAGS AS ROWNAMES
