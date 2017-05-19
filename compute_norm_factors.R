@@ -11,17 +11,17 @@ dir.create(output_tmp, showWarnings = FALSE)
 
 setwd(output_tmp)
 
-sink(output_log, append=TRUE, split=TRUE)
+sink(paste(output_log), append=TRUE, split=TRUE)
 print(paste(Sys.time(),"Start normalization factors computation"))
 sink()
 
   ## SAMPLING
   ## SELECT 33% OF THE TOTAL NUMBER OF K-MERS FOR THE SAMPLING 
-system(paste("zcat ",file," | awk '{if(NR % 3 ==0 || NR ==1){print $0}}' > selected_kmers",sep=""))
+system(paste("zcat ",data," | awk '{if(NR % 3 ==0 || NR ==1){print $0}}' > selected_kmers",sep=""))
 
 selected_kmers_counts <- data.frame(fread(paste("selected_kmers")))
 
-sink(output_log, append=TRUE, split=TRUE)
+sink(file=paste(output_log), append=TRUE, split=TRUE)
 print(paste("Number of kmers :",nrow(selected_kmers_counts)-1))
 sink()
  
@@ -37,6 +37,6 @@ write.table(data.frame(sample=names(normFactors),normalization_factor=as.vector(
              quote=FALSE,
              row.names = FALSE)
              
-sink(output_log, append=TRUE, split=TRUE)
+sink(file=paste(output_log), append=TRUE, split=TRUE)
 print(paste(Sys.time(),"Normalization factors computation done"))
 sink()
