@@ -24,7 +24,6 @@ MAX_CPU         = 1000
 MAX_RAM         = getRAM()
 R1_SUFFIX       = config['r1_suffix']
 R2_SUFFIX       = config['r2_suffix']
-SAMPLING_SIZE   = config['sampling_size']
 
 if 'lib_type' in config:
   LIB_TYPE = config['lib_type']
