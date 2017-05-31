@@ -65,7 +65,7 @@ DIST_MATRIX                 = GENE_EXP_DIR  + "/clustering_of_samples.pdf"
 PCA_DESIGN                  = GENE_EXP_DIR  + "/pca_design.tsv"
 
 # binaries
-REVCOMP         = "/bin/revCompFastq.pl"
+REVCOMP         = BIN_DIR + "/revCompFastq.pl"
 DEKUPL_COUNTER  = BIN_DIR + "/dekupl-counter"
 DIFF_FILTER     = BIN_DIR + "/diffFilter.pl"
 TTEST_FILTER    = BIN_DIR + "/TtestFilter"
