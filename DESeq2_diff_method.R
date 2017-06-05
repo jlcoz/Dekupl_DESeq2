@@ -128,11 +128,11 @@ invisible(foreach(i=1:length(lst_files)) %dopar%{
     colDat <- data.frame(conds=factor(c(rep(0,nb_conditionA),rep(1,nb_conditionB))))
 
     countData = as.matrix(bigTab)
-
+    
     dds <- DESeqDataSetFromMatrix(countData,
                                 colData = colDat,
                                 design = ~ conds)
-
+   
     NormCount_names = colnames(bigTab)
     rm(bigTab);gc()
 
@@ -165,6 +165,13 @@ invisible(foreach(i=1:length(lst_files)) %dopar%{
     # log2FC
     # NormCount
     
+    # WRITE PVALUES FOR THE CURRENT CHUNK IN A SEPARATED FILE, PREPARING THE ADJUSTMENT
+    write.table(data.frame(ID=rownames(resDESeq2),pvalue=resDESeq2$pvalue),
+                file=paste(output_tmp_DESeq2,i,"_pvalue_part_tmp",sep=""),
+                sep="\t",quote=FALSE,
+                row.names = FALSE,
+                col.names = FALSE)
+    
     #FILTER KMERS ON THEIR log2FC
     resDESeq2 = resDESeq2[resDESeq2$log2FoldChange>=abs(log2fc_threshold),]
     NormCount = NormCount[rownames(NormCount)%in%rownames(resDESeq2),]
@@ -178,13 +185,6 @@ invisible(foreach(i=1:length(lst_files)) %dopar%{
                 sep="\t",quote=FALSE,
                 row.names = FALSE,
                 col.names = TRUE)
-
-    # WRITE PVALUES FOR THE CURRENT CHUNK IN A SEPARATED FILE, PREPARING THE ADJUSTMENT
-    write.table(data.frame(ID=rownames(resDESeq2),pvalue=resDESeq2$pvalue),
-                file=paste(output_tmp_DESeq2,i,"_pvalue_part_tmp",sep=""),
-                sep="\t",quote=FALSE,
-                row.names = FALSE,
-                col.names = FALSE)
 
 }) #END FOREACH
 
@@ -244,7 +244,12 @@ print(paste(Sys.time(),"Get counts for pvalues that passed the pvalue filter"))
 sink()
 
   #CREATE THE FINAL HEADER USING ADJ_PVALUE AND DATADESeq2ALL ONES AND COMPRESS THE FILE
-system(paste("paste header_adj_pvalue.txt header_dataDESeq2All.txt > final_header.tmp ; gzip -c final_header.tmp dataDESeq2Filtered > ",output_diff_counts,sep = ""))
+
+output_diff_counts_filename=strsplit(basename(output_diff_counts),".gz")[[1]]
+
+system(paste("paste header_adj_pvalue.txt header_dataDESeq2All.txt > ",output_diff_counts_filename," ; gzip -c ",output_diff_counts_filename," dataDESeq2Filtered > ",output_diff_counts,sep = ""))
+
+system(paste("rm -rf ",output_tmp, sep=""))
 
 sink(file=paste(output_log), append=TRUE, split=TRUE)
 print(paste(Sys.time(),"Analysis done"))
