@@ -8,6 +8,7 @@ normalization_factor_path = snakemake@input$sample_conditions
 nb_conditionA=length(unlist(snakemake@config$samples)[unlist(snakemake@config$samples)=="A"])
 nb_conditionB=length(unlist(snakemake@config$samples)[unlist(snakemake@config$samples)=="B"])
 pvalue_threshold=snakemake@config$Ttest$pvalue_threshold
+log2fc_threshold=snakemake@config$Ttest$log2fc_threshold
 nb_core=snakemake@config$nb_threads
 
 output_tmp=snakemake@config$tmp_dir
@@ -156,14 +157,18 @@ invisible(foreach(i=1:length(lst_files)) %dopar%{
     #COLLECT COUNTS
     NormCount<- as.data.frame(counts(dds, normalized=TRUE))
     names(NormCount) <- NormCount_names
-
+    
     # WRITE A TSV WITH THIS FORMAT FOR THE CURRENT CHUNK
     # Kmer_ID
     # meanA
     # meanB
     # log2FC
     # NormCount
-
+    
+    #FILTER KMERS ON THEIR log2FC
+    resDESeq2 = resDESeq2[resDESeq2$log2FoldChange>=abs(log2fc_threshold),]
+    NormCount = NormCount[rownames(NormCount)%in%rownames(resDESeq2),]
+     
     write.table(data.frame(ID=rownames(resDESeq2),
                          meanA=rowMeans(NormCount[,1:nb_conditionA]),
                          meanB=rowMeans(NormCount[,(as.numeric(nb_conditionA)+1):(as.numeric(nb_conditionA)+as.numeric(nb_conditionB))]),
@@ -174,7 +179,7 @@ invisible(foreach(i=1:length(lst_files)) %dopar%{
                 row.names = FALSE,
                 col.names = TRUE)
 
-    # WRITE PVALUES FOR THE CURRENT CHUNK
+    # WRITE PVALUES FOR THE CURRENT CHUNK IN A SEPARATED FILE, PREPARING THE ADJUSTMENT
     write.table(data.frame(ID=rownames(resDESeq2),pvalue=resDESeq2$pvalue),
                 file=paste(output_tmp_DESeq2,i,"_pvalue_part_tmp",sep=""),
                 sep="\t",quote=FALSE,
@@ -235,7 +240,7 @@ system(paste("head -1 adj_pvalue > header_adj_pvalue.txt ; sed -i 1d adj_pvalue"
 system(paste("sort -k1,1 adj_pvalue > sorted_adj_pvalue_tmp ; sort -k1,1 dataDESeq2All > sorted_dataDESeq2All_tmp ; join sorted_adj_pvalue_tmp sorted_dataDESeq2All_tmp | tr ' ' '\t' > dataDESeq2Filtered",sep = ""))
 
 sink(file=paste(output_log), append=TRUE, split=TRUE)
-print(paste(Sys.time(),"Get counts for pvalues that passed the filter"))
+print(paste(Sys.time(),"Get counts for pvalues that passed the pvalue filter"))
 sink()
 
   #CREATE THE FINAL HEADER USING ADJ_PVALUE AND DATADESeq2ALL ONES AND COMPRESS THE FILE
