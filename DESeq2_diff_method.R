@@ -7,8 +7,8 @@ no_GENCODE=snakemake@input$counts
 normalization_factor_path = snakemake@input$sample_conditions
 nb_conditionA=length(unlist(snakemake@config$samples)[unlist(snakemake@config$samples)=="A"])
 nb_conditionB=length(unlist(snakemake@config$samples)[unlist(snakemake@config$samples)=="B"])
-pvalue_threshold=snakemake@config$Ttest$pvalue_threshold
-log2fc_threshold=snakemake@config$Ttest$log2fc_threshold
+pvalue_threshold=snakemake@config$design$pvalue_threshold
+log2fc_threshold=snakemake@config$design$log2fc_threshold
 nb_core=snakemake@config$nb_threads
 
 output_diff_counts=snakemake@output$diff_counts
