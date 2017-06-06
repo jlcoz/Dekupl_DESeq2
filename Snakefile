@@ -17,8 +17,8 @@ configfile: "/data/config.json"
 # COMMON VARIABLES
 SAMPLE_NAMES    = [i['name'] for i in config["samples"]]
 CONDITION_COL   = "condition"
-CONDITION_A     = config['Ttest']['condition']['A']
-CONDITION_B     = config['Ttest']['condition']['B']
+CONDITION_A     = config['design']['condition']['A']
+CONDITION_B     = config['design']['condition']['B']
 LIB_TYPE        = "rf"
 MAX_CPU         = 1000
 MAX_RAM         = getRAM()
