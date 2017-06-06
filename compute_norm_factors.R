@@ -7,7 +7,7 @@ output_norm_factors=snakemake@output
 
 output_log=snakemake@log[[1]]
 
-output_tmp=paste(snakemake@config$tmp_dir,"/TestDiff_tmp",sep="")
+output_tmp=paste(snakemake@config$tmp_dir,"/TestComput_NF_tmp",sep="")
 
 dir.create(snakemake@config$tmp_dir, showWarnings = FALSE)
 dir.create(output_tmp, showWarnings = FALSE)
