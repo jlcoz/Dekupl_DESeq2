@@ -7,6 +7,9 @@ output_norm_factors=snakemake@output
 
 output_log=snakemake@log[[1]]
 
+output_tmp=paste(snakemake@config$tmp_dir,"/TestDiff_tmp",sep="")
+
+dir.create(snakemake@config$tmp_dir, showWarnings = FALSE)
 dir.create(output_tmp, showWarnings = FALSE)
 
 setwd(output_tmp)
@@ -37,6 +40,8 @@ write.table(data.frame(sample=names(normFactors),normalization_factor=as.vector(
              quote=FALSE,
              row.names = FALSE)
              
+system(paste("rm -rf ",output_tmp, sep=""))
+
 sink(file=paste(output_log), append=TRUE, split=TRUE)
 print(paste(Sys.time(),"Normalization factors computation done"))
 sink()
