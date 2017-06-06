@@ -16,7 +16,7 @@
     "min_recurrence_abundance": 5
   },
 
-  "Ttest": {
+  "design": {
     "condition" : {
       "A": "A",
       "B": "B"
