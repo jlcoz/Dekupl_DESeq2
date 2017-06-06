@@ -1,7 +1,7 @@
-library("data.table")
-library("foreach")
-library("doParallel")
-library("DESeq2")
+suppressWarnings(suppressMessages(library("data.table")))
+suppressWarnings(suppressMessages(library("foreach")))
+suppressWarnings(suppressMessages(library("doParallel")))
+suppressWarnings(suppressMessages(library("DESeq2")))
 
 no_GENCODE=snakemake@input$counts
 normalization_factor_path = snakemake@input$sample_conditions
@@ -11,17 +11,18 @@ pvalue_threshold=snakemake@config$Ttest$pvalue_threshold
 log2fc_threshold=snakemake@config$Ttest$log2fc_threshold
 nb_core=snakemake@config$nb_threads
 
-output_tmp=snakemake@config$tmp_dir
 output_diff_counts=snakemake@output$diff_counts
 output_pvalue_all=snakemake@output$pvalue_all
 
 output_log=snakemake@log[[1]]
 
-shuffle_path=paste(snakemake@config$tmp_dir,"/SHUFFLE_tmp.gz",sep="")
+output_tmp=paste(snakemake@config$tmp_dir,"/TestDiff_tmp",sep="")
+shuffle_path=paste(output_tmp,"/SHUFFLE_tmp.gz",sep="")
+output_tmp_chunks=paste(output_tmp,"/tmp_chunks/",sep="")
+output_tmp_DESeq2=paste(output_tmp,"/tmp_DESeq2/",sep="")
 
-output_tmp_chunks=paste(snakemake@config$tmp_dir,"/tmp_chunks/",sep="")
-output_tmp_DESeq2=paste(snakemake@config$tmp_dir,"/tmp_DESeq2/",sep="")
-
+#CREATE DIRECTORIES
+dir.create(snakemake@config$tmp_dir, showWarnings = FALSE)
 dir.create(output_tmp, showWarnings = FALSE)
 dir.create(output_tmp_chunks, showWarnings = FALSE)
 dir.create(output_tmp_DESeq2, showWarnings = FALSE)
@@ -32,6 +33,7 @@ sink(file=paste(output_log), append=TRUE, split=TRUE)
 print(paste(Sys.time(),"Start DESeq2_diff_methods"))
 sink()
 
+#SIZE OF THE CHUNK IS LIMITED TO 1M KMERS
 if(split_lines > 1000000){
 
 sink(file=paste(output_log), append=TRUE, split=TRUE)
@@ -165,13 +167,6 @@ invisible(foreach(i=1:length(lst_files)) %dopar%{
     # log2FC
     # NormCount
     
-    # WRITE PVALUES FOR THE CURRENT CHUNK IN A SEPARATED FILE, PREPARING THE ADJUSTMENT
-    write.table(data.frame(ID=rownames(resDESeq2),pvalue=resDESeq2$pvalue),
-                file=paste(output_tmp_DESeq2,i,"_pvalue_part_tmp",sep=""),
-                sep="\t",quote=FALSE,
-                row.names = FALSE,
-                col.names = FALSE)
-    
     #FILTER KMERS ON THEIR log2FC
     resDESeq2 = resDESeq2[resDESeq2$log2FoldChange>=abs(log2fc_threshold),]
     NormCount = NormCount[rownames(NormCount)%in%rownames(resDESeq2),]
@@ -185,6 +180,14 @@ invisible(foreach(i=1:length(lst_files)) %dopar%{
                 sep="\t",quote=FALSE,
                 row.names = FALSE,
                 col.names = TRUE)
+                
+                
+    # WRITE PVALUES FOR THE CURRENT CHUNK IN A SEPARATED FILE, PREPARING THE ADJUSTMENT
+    write.table(data.frame(ID=rownames(resDESeq2),pvalue=resDESeq2$pvalue),
+                file=paste(output_tmp_DESeq2,i,"_pvalue_part_tmp",sep=""),
+                sep="\t",quote=FALSE,
+                row.names = FALSE,
+                col.names = FALSE)
 
 }) #END FOREACH
 
