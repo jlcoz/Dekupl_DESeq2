@@ -167,8 +167,8 @@ invisible(foreach(i=1:length(lst_files)) %dopar%{
     # log2FC
     # NormCount
     
-    #FILTER KMERS ON THEIR log2FC
-    resDESeq2 = resDESeq2[resDESeq2$log2FoldChange>=abs(log2fc_threshold),]
+    #FILTER KMERS ON THEIR log2FC -- PROBLEM HERE EVEN WITH 0 IT REMOVES KMERS
+    resDESeq2 = resDESeq2[abs(resDESeq2$log2FoldChange)>=abs(log2fc_threshold),]
     NormCount = NormCount[rownames(NormCount)%in%rownames(resDESeq2),]
      
     write.table(data.frame(ID=rownames(resDESeq2),
