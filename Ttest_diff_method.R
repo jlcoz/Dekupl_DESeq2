@@ -1,8 +1,8 @@
 Ttest=snakemake@input$Ttest_filter
 no_GENCODE=snakemake@input$counts
 normalization_factor_path = snakemake@input$sample_conditions
-pvalue_threshold=snakemake@config$design$pvalue_threshold
-log2fc_threshold=snakemake@config$design$log2fc_threshold
+pvalue_threshold=snakemake@input$pvalue_threshold
+log2fc_threshold=snakemake@input$log2fc_threshold
 
 output_diff_counts=snakemake@output$diff_counts
 output_pvalue_all=snakemake@output$pvalue_all
