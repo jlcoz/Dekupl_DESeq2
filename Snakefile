@@ -24,6 +24,8 @@ MAX_CPU         = 1000
 MAX_RAM         = getRAM()
 R1_SUFFIX       = config['r1_suffix']
 R2_SUFFIX       = config['r2_suffix']
+PVALUE_THRESHOLD=config['design']['pvalue_threshold']
+LOG2FC_THRESHOLD=config['design']['log2fc_threshold']
 
 if 'lib_type' in config:
   LIB_TYPE = config['lib_type']
@@ -454,6 +456,8 @@ rule filter_gencode_counts:
 rule test_diff_counts:
   threads:6
   input:
+    pvalue_threshold = PVALUE_THRESHOLD,
+    log2FC_threshold = LOG2FC_THRESHOLD,
     counts = NO_GENCODE_COUNTS,
     sample_conditions = SAMPLE_CONDITIONS_FULL,
     Ttest_filter = TTEST_FILTER
