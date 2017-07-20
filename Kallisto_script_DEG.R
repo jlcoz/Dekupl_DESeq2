@@ -8,7 +8,8 @@ gene_counts                             = snakemake@input$gene_counts
 sample_conditions                       = snakemake@input$samples_conditions
 conditionA                              = snakemake@input$conditionA
 conditionB                              = snakemake@input$conditionB
-pvalue_threshold                        = snakemake@input$pvalue_threshold
+pvalue_threshold                        = snakemake@params$pvalue_threshold
+
 
 #OUTPUT
 differentially_expressed_genes          = snakemake@output$differentially_expressed_genes

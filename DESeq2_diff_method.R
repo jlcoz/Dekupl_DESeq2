@@ -6,8 +6,8 @@ suppressWarnings(suppressMessages(library("DESeq2")))
 # Get parameters for the test
 no_GENCODE                = snakemake@input$counts
 sample_conditions         = snakemake@input$sample_conditions
-pvalue_threshold          = snakemake@input$pvalue_threshold
-log2fc_threshold          = snakemake@input$log2fc_threshold
+pvalue_threshold          = snakemake@params$pvalue_threshold
+log2fc_threshold          = snakemake@params$log2fc_threshold
 conditionA                = snakemake@params$conditionA
 conditionB                = snakemake@params$conditionB
 nb_core                   = snakemake@threads
