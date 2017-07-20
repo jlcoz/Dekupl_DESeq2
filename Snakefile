@@ -304,8 +304,6 @@ rule gene_counts:
 # 1.7 Differential expression with DESEQ2
 rule differential_gene_expression:
   input:
-    conditionA = CONDITION_A,
-    conditionB = CONDITION_B,
     gene_counts = GENE_COUNTS,
     sample_conditions = SAMPLE_CONDITIONS
   output:
