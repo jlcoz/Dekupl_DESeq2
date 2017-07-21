@@ -6,8 +6,8 @@ suppressWarnings(suppressMessages(library(ggplot2)))
 #INPUT
 gene_counts                             = snakemake@input$gene_counts
 sample_conditions                       = snakemake@input$sample_conditions
-conditionA                              = snakemake@params$conditionA
-conditionB                              = snakemake@params$conditionB
+conditionA                              = snakemake@params$condition_A
+conditionB                              = snakemake@params$condition_B
 pvalue_threshold                        = snakemake@params$pvalue_threshold
 
 
