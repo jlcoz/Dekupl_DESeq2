@@ -35,14 +35,11 @@ printing <- function(str) {
 logging("Start Kallisto DE analysis")
 
 # Load counts data
-countsData = read.table(gene_counts,header=T,row.names=1)
+countsData = read.table(gene_counts,header=T,row.names=1, check.names=FALSE)
 
 # Load col data with sample specifications
 
-colData = read.table(sample_conditions,header=T,row.names=1)
-
-printing(colnames(countsData))
-printing(rownames(colData))
+colData = read.table(sample_conditions,header=T,row.names=1, check.names=FALSE)
 
 colData = colData[colnames(countsData),,drop=FALSE]
 

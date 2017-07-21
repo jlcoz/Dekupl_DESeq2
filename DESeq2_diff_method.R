@@ -129,11 +129,11 @@ header = as.character(unlist(read.table(file = header_no_GENCODE, sep = "\t", he
 logging(paste("Foreach of the", length(lst_files),"files"))
 
 ## LOADING PRIOR KNOWN NORMALISATION FACTORS
-colData = read.table(sample_conditions,header=T,row.names=1)
+colData = read.table(sample_conditions, header=T, row.names=1, check.names=FALSE)
 
 ## DESeq2 ANALYSIS ON EACH CHUNKS
 invisible(foreach(i=1:length(lst_files)) %dopar% {
-            bigTab = read.table(lst_files[i],header=F,stringsAsFactors=F)
+            bigTab = read.table(lst_files[i],header=F,stringsAsFactors=F, check.names=FALSE)
             #SET TAGS AS ROWNAMES
             rownames(bigTab)=bigTab[,1]
             #REMOVE THE TAG AS A COLUMN
