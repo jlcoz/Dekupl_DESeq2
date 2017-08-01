@@ -4,12 +4,11 @@ suppressWarnings(suppressMessages(library(pheatmap)))
 suppressWarnings(suppressMessages(library(ggplot2)))
 
 #INPUT
+conditionA                              = snakemake@params$conditionA
+conditionB                              = snakemake@params$conditionB
 gene_counts                             = snakemake@input$gene_counts
-sample_conditions                       = snakemake@input$sample_conditions
-conditionA                              = snakemake@params$condition_A
-conditionB                              = snakemake@params$condition_B
 pvalue_threshold                        = snakemake@params$pvalue_threshold
-
+sample_conditions                       = snakemake@input$sample_conditions
 
 #OUTPUT
 differentially_expressed_genes          = snakemake@output$differentially_expressed_genes
@@ -17,6 +16,8 @@ differentially_expressed_genes_filtered = snakemake@output$differentially_expres
 dist_matrix                             = snakemake@output$dist_matrix
 norm_counts	                            = snakemake@output$norm_counts
 pca_design                              = snakemake@output$pca_design
+
+#LOG
 output_log                              = snakemake@log[[1]]
 
 #FUNCTION
@@ -35,26 +36,28 @@ printing <- function(str) {
 logging("Start Kallisto DE analysis")
 
 # Load counts data
-countsData = read.table(gene_counts,header=T,row.names=1, check.names=FALSE)
+countsData = read.table(gene_counts,header=T,row.names=1)
 
 # Load col data with sample specifications
-
-colData = read.table(sample_conditions,header=T,row.names=1, check.names=FALSE)
-
+colData = read.table(sample_conditions,header=T,row.names=1)
 colData = colData[colnames(countsData),,drop=FALSE]
+
 
 # Create DESeq2 object
 dds <- DESeqDataSetFromMatrix(countData=countsData,
                               colData=colData,
                               design = ~ condition)
-                                       
+
+                              
 dds <- DESeq(dds)
 
+#WITHOUT FILTERING
+
 #normalized counts 
-NormCount<- as.data.frame(counts(dds,normalized=TRUE))
+NormCounts<- as.data.frame(counts(dds,normalized=TRUE))
   
 #writing in a file normalized counts
-normalized_counts<-data.frame(id=row.names(NormCount),NormCount,row.names=NULL)
+normalized_counts<-data.frame(id=row.names(NormCounts),NormCounts,row.names=NULL)
 write.table(normalized_counts,
             file=norm_counts, 
             sep="\t",
@@ -63,11 +66,10 @@ write.table(normalized_counts,
 
 printing(resultsNames(dds))
 
-results_Kallisto <- results(dds, contrast = c("condition", conditionA, conditionB))
+results_Kallisto <- results(dds, contrast = c("condition", "A", "B"))
 
-# Write DEGs
+#write DEGs
 
-#WITHOUT FILTERING
 write.table(data.frame(ID=rownames(results_Kallisto),
                        baseMean=results_Kallisto$baseMean,
                        log2FoldChange=results_Kallisto$log2FoldChange,
@@ -81,9 +83,22 @@ write.table(data.frame(ID=rownames(results_Kallisto),
 #WITH FILTER ON ADJUSTED PVALUE AND REMOVE NA 
 
 results_Kallisto = na.omit(results_Kallisto)
+results_Kallisto = results_Kallisto[results_Kallisto$padj<0.05,]
 
-results_Kallisto = results_Kallisto[results_Kallisto$padj<pvalue_threshold,]
+#Get DE gene_ID
+gene_ID_DE = rownames(results_Kallisto)
+normalized_counts_filtered = NormCounts[rownames(NormCounts)%in%gene_ID_DE,]
 
+#writing in a file filtered norm counts
+normalized_counts_filtered<-data.frame(id=rownames(NormCounts), NormCounts, row.names=NULL)
+
+write.table(normalized_counts_filtered,
+            file=norm_counts, 
+            sep="\t",
+            row.names=F, 
+            col.names=T, quote=F)
+
+#write DEGs filtered
 write.table(data.frame(ID=rownames(results_Kallisto),
                        baseMean=results_Kallisto$baseMean,
                        log2FoldChange=results_Kallisto$log2FoldChange,
