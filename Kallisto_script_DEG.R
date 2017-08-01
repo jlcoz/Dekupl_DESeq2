@@ -39,7 +39,9 @@ logging("Start Kallisto DE analysis")
 countsData = read.table(gene_counts,header=T,row.names=1)
 
 # Load col data with sample specifications
+
 colData = read.table(sample_conditions,header=T,row.names=1)
+
 colData = colData[colnames(countsData),,drop=FALSE]
 
 
@@ -69,7 +71,6 @@ printing(resultsNames(dds))
 results_Kallisto <- results(dds, contrast = c("condition", "A", "B"))
 
 #write DEGs
-
 write.table(data.frame(ID=rownames(results_Kallisto),
                        baseMean=results_Kallisto$baseMean,
                        log2FoldChange=results_Kallisto$log2FoldChange,
@@ -81,19 +82,16 @@ write.table(data.frame(ID=rownames(results_Kallisto),
             quote=FALSE)
 
 #WITH FILTER ON ADJUSTED PVALUE AND REMOVE NA 
-
 results_Kallisto = na.omit(results_Kallisto)
 results_Kallisto = results_Kallisto[results_Kallisto$padj<0.05,]
 
 #Get DE gene_ID
 gene_ID_DE = rownames(results_Kallisto)
-normalized_counts_filtered = NormCounts[rownames(NormCounts)%in%gene_ID_DE,]
+NormCounts_filtered = NormCounts[rownames(NormCounts)%in%gene_ID_DE,]
 
 #writing in a file filtered norm counts
-normalized_counts_filtered<-data.frame(id=rownames(NormCounts), NormCounts, row.names=NULL)
-
-write.table(normalized_counts_filtered,
-            file=norm_counts, 
+write.table(NormCounts_filtered,
+            file=norm_counts_filtered, 
             sep="\t",
             row.names=F, 
             col.names=T, quote=F)
