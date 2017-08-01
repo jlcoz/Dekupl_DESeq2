@@ -64,6 +64,7 @@ DEGS                        = GENE_EXP_DIR  + "/" + CONDITION_A + "vs" + CONDITI
 DEGS_FILTERED               = GENE_EXP_DIR  + "/" + CONDITION_A + "vs" + CONDITION_B + "-DEGs_filtered.tsv"
 NORMALIZATION_FACTORS       = GENE_EXP_DIR  + "/normalization_factors.tsv"
 NORMALIZED_COUNTS	        = GENE_EXP_DIR  + "/normalized_counts.tsv"
+NORMALIZED_COUNTS_FILTERED	= GENE_EXP_DIR  + "/normalized_counts_filtered.tsv"
 DIST_MATRIX                 = GENE_EXP_DIR  + "/clustering_of_samples.pdf"
 PCA_DESIGN                  = GENE_EXP_DIR  + "/pca_design.tsv"
 
@@ -311,6 +312,7 @@ rule differential_gene_expression:
     differentially_expressed_genes_filtered = DEGS_FILTERED,
     dist_matrix			           = DIST_MATRIX,
     norm_counts		               = NORMALIZED_COUNTS,
+    norm_counts_filtered           = NORMALIZED_COUNTS_FILTERED,
     pca_design = PCA_DESIGN  
   log : LOGS + "/Kallisto_DEG.log"
   script: KALLISTO_SCRIPT

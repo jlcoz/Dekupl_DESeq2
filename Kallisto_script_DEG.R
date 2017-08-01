@@ -15,6 +15,7 @@ differentially_expressed_genes          = snakemake@output$differentially_expres
 differentially_expressed_genes_filtered = snakemake@output$differentially_expressed_genes_filtered
 dist_matrix                             = snakemake@output$dist_matrix
 norm_counts	                            = snakemake@output$norm_counts
+norm_counts_filtered                    = snakemake@output$norm_counts_filtered
 pca_design                              = snakemake@output$pca_design
 
 #LOG
