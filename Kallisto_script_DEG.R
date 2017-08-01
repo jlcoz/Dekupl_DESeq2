@@ -89,6 +89,7 @@ results_Kallisto = results_Kallisto[results_Kallisto$padj<0.05,]
 #Get DE gene_ID
 gene_ID_DE = rownames(results_Kallisto)
 NormCounts_filtered = NormCounts[rownames(NormCounts)%in%gene_ID_DE,]
+NormCounts_filtered = data.frame(id=row.names(NormCounts_filtered),NormCounts_filtered,row.names=NULL)
 
 #writing in a file filtered norm counts
 write.table(NormCounts_filtered,
